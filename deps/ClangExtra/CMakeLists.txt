@@ -63,6 +63,27 @@ target_compile_definitions(clangex PUBLIC "_FILE_OFFSET_BITS=64")
 # spelled here because they are one contract.
 target_compile_definitions(clangex PUBLIC "__STDC_CONSTANT_MACROS" "__STDC_FORMAT_MACROS" "__STDC_LIMIT_MACROS")
 
+# Opt-in: mingw builds whose gcc is NEWER than the runtime julia.exe ships. A dynamic
+# libclangex.dll imports libstdc++-6.dll / libgcc_s_seh-1.dll / libwinpthread-1.dll by
+# NAME, and the loading process resolves those names from julia's own bin directory. A
+# BinaryBuilder build is safe with that: its curated GCC shards are older than julia's
+# bundled runtime, and old-binary-on-newer-runtime is the supported direction -- so the
+# Yggdrasil recipe must NOT set this, and the default stays the ecosystem's dynamic
+# linkage. An msys2 build inverts it (gcc 16.1 today against julia's older runtime), and
+# two generations of winpthread/libstdc++ TLS and once-machinery in one process is
+# loader-deadlock territory; deps/build_local.jl therefore turns this on for Windows.
+# Static linking is sound here: x86_64 SEH unwinding keeps no cross-module state, so
+# per-module unwind tables work, and no C++ exception crosses this library's C boundary
+# by contract. winpthread needs --whole-archive because its initialization otherwise
+# rides on the DLL's attach hooks; -Bdynamic restores the default before the
+# LLVM/clang-cpp import libraries resolve.
+option(CLANGEX_STATIC_GCC_RUNTIME "Link the gcc runtime statically (mingw only)" OFF)
+if (MINGW AND CLANGEX_STATIC_GCC_RUNTIME)
+    target_link_options(clangex PRIVATE -static-libgcc -static-libstdc++
+                        "-Wl,-Bstatic,--whole-archive" "-lwinpthread"
+                        "-Wl,--no-whole-archive,-Bdynamic")
+endif()
+
 target_link_libraries(clangex LINK_PUBLIC LLVM clang-cpp)
 
 include(cmake/install_config.cmake)

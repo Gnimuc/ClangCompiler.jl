@@ -8,6 +8,7 @@
 #include "clang/AST/PrettyPrinter.h"
 #include "llvm/Support/raw_ostream.h"
 #include "clang/AST/CanonicalType.h"
+#include "clang/Basic/AttrKinds.h"
 
 // Drift alarm: the vendored TypeNodes.inc must match the pinned LLVM version.
 // One assert per concrete class proves CXTypeClass equals clang's TypeClass
@@ -316,15 +317,16 @@ unsigned clang_Qualifiers_addConsistentQualifiers(unsigned Quals, unsigned Other
   return Qs.getAsOpaqueValue();
 }
 
-bool clang_Qualifiers_isAddressSpaceSupersetOf(CXLangAS A, CXLangAS B) {
+bool clang_Qualifiers_isAddressSpaceSupersetOf(CXLangAS A, CXLangAS B, CXASTContext Ctx) {
   clang::LangAS AS_A = static_cast<clang::LangAS>(A);
   clang::LangAS AS_B = static_cast<clang::LangAS>(B);
-  return clang::Qualifiers::isAddressSpaceSupersetOf(AS_A, AS_B);
+  return clang::Qualifiers::isAddressSpaceSupersetOf(
+      AS_A, AS_B, *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
-bool clang_Qualifiers_compatiblyIncludes(unsigned Quals, unsigned Other) {
+bool clang_Qualifiers_compatiblyIncludes(unsigned Quals, unsigned Other, CXASTContext Ctx) {
   return clang::Qualifiers::fromOpaqueValue(Quals).compatiblyIncludes(
-      clang::Qualifiers::fromOpaqueValue(Other));
+      clang::Qualifiers::fromOpaqueValue(Other), *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
 bool clang_Qualifiers_isStrictSupersetOf(unsigned Quals, unsigned Other) {
@@ -561,14 +563,16 @@ CXDestructionKind clang_QualType_isDestructedType(CXQualType OpaquePtr) {
       clang::QualType::getFromOpaquePtr(OpaquePtr).isDestructedType());
 }
 
-bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other) {
+bool clang_QualType_isMoreQualifiedThan(CXQualType OpaquePtr, CXQualType Other,
+                                        CXASTContext Ctx) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).isMoreQualifiedThan(
-      clang::QualType::getFromOpaquePtr(Other));
+      clang::QualType::getFromOpaquePtr(Other), *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
-bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other) {
+bool clang_QualType_isAddressSpaceOverlapping(CXQualType OpaquePtr, CXQualType Other,
+                                              CXASTContext Ctx) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).isAddressSpaceOverlapping(
-      clang::QualType::getFromOpaquePtr(Other));
+      clang::QualType::getFromOpaquePtr(Other), *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
 CXQualifiers_GC clang_QualType_getObjCGCAttr(CXQualType OpaquePtr) {
@@ -602,9 +606,10 @@ bool clang_QualType_isNonWeakInMRRWithObjCWeak(CXQualType OpaquePtr, CXASTContex
       *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
-bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other) {
+bool clang_QualType_isAtLeastAsQualifiedAs(CXQualType OpaquePtr, CXQualType Other,
+                                           CXASTContext Ctx) {
   return clang::QualType::getFromOpaquePtr(OpaquePtr).isAtLeastAsQualifiedAs(
-      clang::QualType::getFromOpaquePtr(Other));
+      clang::QualType::getFromOpaquePtr(Other), *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
 CXQualType clang_QualType_getNonReferenceType(CXQualType OpaquePtr) {
@@ -698,11 +703,7 @@ bool clang_QualType_isTriviallyRelocatableType(CXQualType OpaquePtr, CXASTContex
       *reinterpret_cast<clang::ASTContext *>(Ctx));
 }
 
-bool clang_QualType_isTriviallyEqualityComparableType(CXQualType OpaquePtr,
-                                                      CXASTContext Ctx) {
-  return clang::QualType::getFromOpaquePtr(OpaquePtr).isTriviallyEqualityComparableType(
-      *reinterpret_cast<clang::ASTContext *>(Ctx));
-}
+// isTriviallyEqualityComparableType
 
 CXString clang_QualType_getAsString(CXQualType OpaquePtr) {
   return extra::makeCXString(clang::QualType::getFromOpaquePtr(OpaquePtr).getAsString());
@@ -2997,8 +2998,19 @@ bool clang_AttributedType_getImmediateNullability(CXAttributedType T,
 }
 
 CXAttrKind clang_AttributedType_getNullabilityAttrKind(CXNullabilityKind Kind) {
-  return static_cast<CXAttrKind>(clang::AttributedType::getNullabilityAttrKind(
-      static_cast<clang::NullabilityKind>(Kind)));
+  // LLVM 20 dropped AttributedType::getNullabilityAttrKind; the mapping is a
+  // static table of attr::Kind values and is reconstructed here.
+  switch (static_cast<clang::NullabilityKind>(Kind)) {
+  case clang::NullabilityKind::NonNull:
+    return static_cast<CXAttrKind>(clang::attr::TypeNonNull);
+  case clang::NullabilityKind::Nullable:
+    return static_cast<CXAttrKind>(clang::attr::TypeNullable);
+  case clang::NullabilityKind::NullableResult:
+    return static_cast<CXAttrKind>(clang::attr::TypeNullableResult);
+  case clang::NullabilityKind::Unspecified:
+    return static_cast<CXAttrKind>(clang::attr::TypeNullUnspecified);
+  }
+  llvm_unreachable("Unknown nullability kind.");
 }
 
 bool clang_AttributedType_stripOuterNullability(CXQualType *T, CXNullabilityKind *Out) {

@@ -513,8 +513,9 @@ CXQualType clang_CallExpr_getCallReturnType(CXCallExpr CE, CXASTContext Ctx) {
 
 CXAttr clang_CallExpr_getUnusedResultAttr(CXCallExpr CE, CXASTContext Ctx) {
   return reinterpret_cast<CXAttr>(const_cast<clang::Attr *>(
-      reinterpret_cast<clang::CallExpr *>(CE)->getUnusedResultAttr(
-          *reinterpret_cast<clang::ASTContext *>(Ctx))));
+      reinterpret_cast<clang::CallExpr *>(CE)
+          ->getUnusedResultAttr(*reinterpret_cast<clang::ASTContext *>(Ctx))
+          .second));
 }
 
 bool clang_CallExpr_hasUnusedResultAttr(CXCallExpr CE, CXASTContext Ctx) {

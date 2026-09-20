@@ -32,7 +32,7 @@ if !hasmethod(CC.clty_to_jlty, Tuple{CC.VoidTy})
     CC.clty_to_jlty(x::CC.NullPtrTy) = Ptr{Cvoid}
     CC.clty_to_jlty(x::CC.VoidPtrTy) = Ptr{Cvoid}
 end
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
+using ClangCompiler: create_interpreter, create_parser, dispose, DeclFinder, get_decl
 # Setter/factory coverage: round-trip setters and construct-from-live-context
 # factories for the AST surface (built + self-verified by subagents).
 const LX = CC.LibClangEx
@@ -2054,7 +2054,7 @@ end
     # spells -- an aarch64 runner would reject `arch=haswell` and clang would then attach no
     # attribute at all. Pinning the triple makes every assertion below a value clang decided
     # rather than one the CI runner decided; see test/clang/pinned_target.jl.
-    P = create_interpreter(String[]; triple="x86_64-linux-gnu")
+    P = create_parser(String[]; triple="x86_64-linux-gnu")
     CC.parse(P, """
              __attribute__((target("arch=haswell,tune=skylake,avx2,no-sse3")))
              int fta_probe(int a) { return a; }

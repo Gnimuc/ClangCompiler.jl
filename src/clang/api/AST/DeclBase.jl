@@ -937,8 +937,9 @@ end
 
 """
     isDiscardedInGlobalModuleFragment(x::AbstractDecl) -> Bool
-Whether `x` is discarded as unreachable in a global module fragment. Clang does
-not implement discarding, so this is always `false`.
+Always `false`. LLVM 20 has no `Decl::isDiscardedInGlobalModuleFragment` — clang never
+implemented discarding ([module.global.frag]p3,4) and removed the always-false predicate — so
+the shim has no method to call; the C name is kept so the binding still resolves.
 """
 function isDiscardedInGlobalModuleFragment(x::AbstractDecl)
     @check_ptrs x

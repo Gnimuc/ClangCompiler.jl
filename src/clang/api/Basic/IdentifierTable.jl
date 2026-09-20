@@ -230,7 +230,8 @@ end
 """
     getObjCOrBuiltinID(x::AbstractIdentifierInfo) -> Int
 Return the packed field backing `getObjCKeywordID`, `getInterestingIdentifierID` and
-`getBuiltinID`; `0` means the identifier is none of them.
+`getBuiltinID`. LLVM 20's empty value is `NotInterestingIdentifier` (65534), not 0;
+the three decoded accessors still report 0 for a plain identifier.
 """
 function getObjCOrBuiltinID(x::AbstractIdentifierInfo)
     @check_ptrs x
@@ -357,8 +358,8 @@ getMaxBuiltinID() = clang_IdentifierInfo_getMaxBuiltinID()
 
 """
     clearBuiltinID(x::AbstractIdentifierInfo)
-Zero the packed `ObjCOrBuiltinID` field, leaving the identifier neither a builtin, nor an
-Objective-C keyword, nor an interesting identifier.
+Reset the packed `ObjCOrBuiltinID` field to `NotInterestingIdentifier` (65534), leaving
+the identifier neither a builtin, nor an Objective-C keyword, nor an interesting identifier.
 """
 function clearBuiltinID(x::AbstractIdentifierInfo)
     @check_ptrs x

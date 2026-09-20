@@ -126,6 +126,10 @@ mutable struct CXParenExprImpl <: AbstractCXImpl end
 
 const CXParenExpr = Ptr{CXParenExprImpl}
 
+mutable struct CXPackIndexingExprImpl <: AbstractCXImpl end
+
+const CXPackIndexingExpr = Ptr{CXPackIndexingExprImpl}
+
 mutable struct CXPackExpansionExprImpl <: AbstractCXImpl end
 
 const CXPackExpansionExpr = Ptr{CXPackExpansionExprImpl}
@@ -141,6 +145,10 @@ const CXUnresolvedMemberExpr = Ptr{CXUnresolvedMemberExprImpl}
 mutable struct CXUnresolvedLookupExprImpl <: AbstractCXImpl end
 
 const CXUnresolvedLookupExpr = Ptr{CXUnresolvedLookupExprImpl}
+
+mutable struct CXOpenACCAsteriskSizeExprImpl <: AbstractCXImpl end
+
+const CXOpenACCAsteriskSizeExpr = Ptr{CXOpenACCAsteriskSizeExprImpl}
 
 mutable struct CXOpaqueValueExprImpl <: AbstractCXImpl end
 
@@ -218,10 +226,6 @@ mutable struct CXOMPArrayShapingExprImpl <: AbstractCXImpl end
 
 const CXOMPArrayShapingExpr = Ptr{CXOMPArrayShapingExprImpl}
 
-mutable struct CXOMPArraySectionExprImpl <: AbstractCXImpl end
-
-const CXOMPArraySectionExpr = Ptr{CXOMPArraySectionExprImpl}
-
 mutable struct CXNoInitExprImpl <: AbstractCXImpl end
 
 const CXNoInitExpr = Ptr{CXNoInitExprImpl}
@@ -266,6 +270,10 @@ mutable struct CXImaginaryLiteralImpl <: AbstractCXImpl end
 
 const CXImaginaryLiteral = Ptr{CXImaginaryLiteralImpl}
 
+mutable struct CXHLSLOutArgExprImpl <: AbstractCXImpl end
+
+const CXHLSLOutArgExpr = Ptr{CXHLSLOutArgExprImpl}
+
 mutable struct CXGenericSelectionExprImpl <: AbstractCXImpl end
 
 const CXGenericSelectionExpr = Ptr{CXGenericSelectionExprImpl}
@@ -305,6 +313,10 @@ const CXExtVectorElementExpr = Ptr{CXExtVectorElementExprImpl}
 mutable struct CXExpressionTraitExprImpl <: AbstractCXImpl end
 
 const CXExpressionTraitExpr = Ptr{CXExpressionTraitExprImpl}
+
+mutable struct CXEmbedExprImpl <: AbstractCXImpl end
+
+const CXEmbedExpr = Ptr{CXEmbedExprImpl}
 
 mutable struct CXDesignatedInitUpdateExprImpl <: AbstractCXImpl end
 
@@ -550,6 +562,10 @@ mutable struct CXArraySubscriptExprImpl <: AbstractCXImpl end
 
 const CXArraySubscriptExpr = Ptr{CXArraySubscriptExprImpl}
 
+mutable struct CXArraySectionExprImpl <: AbstractCXImpl end
+
+const CXArraySectionExpr = Ptr{CXArraySectionExprImpl}
+
 mutable struct CXArrayInitLoopExprImpl <: AbstractCXImpl end
 
 const CXArrayInitLoopExpr = Ptr{CXArrayInitLoopExprImpl}
@@ -594,6 +610,10 @@ mutable struct CXCaseStmtImpl <: AbstractCXImpl end
 
 const CXCaseStmt = Ptr{CXCaseStmtImpl}
 
+mutable struct CXSYCLKernelCallStmtImpl <: AbstractCXImpl end
+
+const CXSYCLKernelCallStmt = Ptr{CXSYCLKernelCallStmtImpl}
+
 mutable struct CXSEHTryStmtImpl <: AbstractCXImpl end
 
 const CXSEHTryStmt = Ptr{CXSEHTryStmtImpl}
@@ -613,6 +633,62 @@ const CXSEHExceptStmt = Ptr{CXSEHExceptStmtImpl}
 mutable struct CXReturnStmtImpl <: AbstractCXImpl end
 
 const CXReturnStmt = Ptr{CXReturnStmtImpl}
+
+mutable struct CXOpenACCConstructStmtImpl <: AbstractCXImpl end
+
+const CXOpenACCConstructStmt = Ptr{CXOpenACCConstructStmtImpl}
+
+mutable struct CXOpenACCWaitConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCWaitConstruct = Ptr{CXOpenACCWaitConstructImpl}
+
+mutable struct CXOpenACCUpdateConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCUpdateConstruct = Ptr{CXOpenACCUpdateConstructImpl}
+
+mutable struct CXOpenACCShutdownConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCShutdownConstruct = Ptr{CXOpenACCShutdownConstructImpl}
+
+mutable struct CXOpenACCSetConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCSetConstruct = Ptr{CXOpenACCSetConstructImpl}
+
+mutable struct CXOpenACCInitConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCInitConstruct = Ptr{CXOpenACCInitConstructImpl}
+
+mutable struct CXOpenACCExitDataConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCExitDataConstruct = Ptr{CXOpenACCExitDataConstructImpl}
+
+mutable struct CXOpenACCEnterDataConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCEnterDataConstruct = Ptr{CXOpenACCEnterDataConstructImpl}
+
+mutable struct CXOpenACCAssociatedStmtConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCAssociatedStmtConstruct = Ptr{CXOpenACCAssociatedStmtConstructImpl}
+
+mutable struct CXOpenACCLoopConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCLoopConstruct = Ptr{CXOpenACCLoopConstructImpl}
+
+mutable struct CXOpenACCHostDataConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCHostDataConstruct = Ptr{CXOpenACCHostDataConstructImpl}
+
+mutable struct CXOpenACCDataConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCDataConstruct = Ptr{CXOpenACCDataConstructImpl}
+
+mutable struct CXOpenACCComputeConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCComputeConstruct = Ptr{CXOpenACCComputeConstructImpl}
+
+mutable struct CXOpenACCCombinedConstructImpl <: AbstractCXImpl end
+
+const CXOpenACCCombinedConstruct = Ptr{CXOpenACCCombinedConstructImpl}
 
 mutable struct CXObjCForCollectionStmtImpl <: AbstractCXImpl end
 
@@ -765,6 +841,14 @@ const CXOMPUnrollDirective = Ptr{CXOMPUnrollDirectiveImpl}
 mutable struct CXOMPTileDirectiveImpl <: AbstractCXImpl end
 
 const CXOMPTileDirective = Ptr{CXOMPTileDirectiveImpl}
+
+mutable struct CXOMPReverseDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPReverseDirective = Ptr{CXOMPReverseDirectiveImpl}
+
+mutable struct CXOMPInterchangeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPInterchangeDirective = Ptr{CXOMPInterchangeDirectiveImpl}
 
 mutable struct CXOMPLoopDirectiveImpl <: AbstractCXImpl end
 
@@ -946,6 +1030,10 @@ mutable struct CXOMPAtomicDirectiveImpl <: AbstractCXImpl end
 
 const CXOMPAtomicDirective = Ptr{CXOMPAtomicDirectiveImpl}
 
+mutable struct CXOMPAssumeDirectiveImpl <: AbstractCXImpl end
+
+const CXOMPAssumeDirective = Ptr{CXOMPAssumeDirectiveImpl}
+
 mutable struct CXOMPCanonicalLoopImpl <: AbstractCXImpl end
 
 const CXOMPCanonicalLoop = Ptr{CXOMPCanonicalLoopImpl}
@@ -1034,9 +1122,17 @@ mutable struct CXTranslationUnitDeclImpl <: AbstractCXImpl end
 
 const CXTranslationUnitDecl = Ptr{CXTranslationUnitDeclImpl}
 
+mutable struct CXTopLevelStmtDeclImpl <: AbstractCXImpl end
+
+const CXTopLevelStmtDecl = Ptr{CXTopLevelStmtDeclImpl}
+
 mutable struct CXRequiresExprBodyDeclImpl <: AbstractCXImpl end
 
 const CXRequiresExprBodyDecl = Ptr{CXRequiresExprBodyDeclImpl}
+
+mutable struct CXOutlinedFunctionDeclImpl <: AbstractCXImpl end
+
+const CXOutlinedFunctionDecl = Ptr{CXOutlinedFunctionDeclImpl}
 
 mutable struct CXLinkageSpecDeclImpl <: AbstractCXImpl end
 
@@ -1057,10 +1153,6 @@ const CXCapturedDecl = Ptr{CXCapturedDeclImpl}
 mutable struct CXBlockDeclImpl <: AbstractCXImpl end
 
 const CXBlockDecl = Ptr{CXBlockDeclImpl}
-
-mutable struct CXTopLevelStmtDeclImpl <: AbstractCXImpl end
-
-const CXTopLevelStmtDecl = Ptr{CXTopLevelStmtDeclImpl}
 
 mutable struct CXStaticAssertDeclImpl <: AbstractCXImpl end
 
@@ -1422,9 +1514,17 @@ mutable struct CXAddressSpaceAttrImpl <: AbstractCXImpl end
 
 const CXAddressSpaceAttr = Ptr{CXAddressSpaceAttrImpl}
 
+mutable struct CXAllocatingAttrImpl <: AbstractCXImpl end
+
+const CXAllocatingAttr = Ptr{CXAllocatingAttrImpl}
+
 mutable struct CXAnnotateTypeAttrImpl <: AbstractCXImpl end
 
 const CXAnnotateTypeAttr = Ptr{CXAnnotateTypeAttrImpl}
+
+mutable struct CXArmAgnosticAttrImpl <: AbstractCXImpl end
+
+const CXArmAgnosticAttr = Ptr{CXArmAgnosticAttrImpl}
 
 mutable struct CXArmInAttrImpl <: AbstractCXImpl end
 
@@ -1458,21 +1558,45 @@ mutable struct CXBTFTypeTagAttrImpl <: AbstractCXImpl end
 
 const CXBTFTypeTagAttr = Ptr{CXBTFTypeTagAttrImpl}
 
+mutable struct CXBlockingAttrImpl <: AbstractCXImpl end
+
+const CXBlockingAttr = Ptr{CXBlockingAttrImpl}
+
 mutable struct CXCmseNSCallAttrImpl <: AbstractCXImpl end
 
 const CXCmseNSCallAttr = Ptr{CXCmseNSCallAttrImpl}
+
+mutable struct CXHLSLContainedTypeAttrImpl <: AbstractCXImpl end
+
+const CXHLSLContainedTypeAttr = Ptr{CXHLSLContainedTypeAttrImpl}
 
 mutable struct CXHLSLGroupSharedAddressSpaceAttrImpl <: AbstractCXImpl end
 
 const CXHLSLGroupSharedAddressSpaceAttr = Ptr{CXHLSLGroupSharedAddressSpaceAttrImpl}
 
-mutable struct CXHLSLParamModifierAttrImpl <: AbstractCXImpl end
+mutable struct CXHLSLROVAttrImpl <: AbstractCXImpl end
 
-const CXHLSLParamModifierAttr = Ptr{CXHLSLParamModifierAttrImpl}
+const CXHLSLROVAttr = Ptr{CXHLSLROVAttrImpl}
+
+mutable struct CXHLSLRawBufferAttrImpl <: AbstractCXImpl end
+
+const CXHLSLRawBufferAttr = Ptr{CXHLSLRawBufferAttrImpl}
+
+mutable struct CXHLSLResourceClassAttrImpl <: AbstractCXImpl end
+
+const CXHLSLResourceClassAttr = Ptr{CXHLSLResourceClassAttrImpl}
 
 mutable struct CXNoDerefAttrImpl <: AbstractCXImpl end
 
 const CXNoDerefAttr = Ptr{CXNoDerefAttrImpl}
+
+mutable struct CXNonAllocatingAttrImpl <: AbstractCXImpl end
+
+const CXNonAllocatingAttr = Ptr{CXNonAllocatingAttrImpl}
+
+mutable struct CXNonBlockingAttrImpl <: AbstractCXImpl end
+
+const CXNonBlockingAttr = Ptr{CXNonBlockingAttrImpl}
 
 mutable struct CXObjCGCAttrImpl <: AbstractCXImpl end
 
@@ -1534,10 +1658,6 @@ mutable struct CXTypeNullUnspecifiedAttrImpl <: AbstractCXImpl end
 
 const CXTypeNullUnspecifiedAttr = Ptr{CXTypeNullUnspecifiedAttrImpl}
 
-mutable struct CXTypeNullableAttrImpl <: AbstractCXImpl end
-
-const CXTypeNullableAttr = Ptr{CXTypeNullableAttrImpl}
-
 mutable struct CXTypeNullableResultAttrImpl <: AbstractCXImpl end
 
 const CXTypeNullableResultAttr = Ptr{CXTypeNullableResultAttrImpl}
@@ -1550,6 +1670,10 @@ mutable struct CXWebAssemblyFuncrefAttrImpl <: AbstractCXImpl end
 
 const CXWebAssemblyFuncrefAttr = Ptr{CXWebAssemblyFuncrefAttrImpl}
 
+mutable struct CXCXXAssumeAttrImpl <: AbstractCXImpl end
+
+const CXCXXAssumeAttr = Ptr{CXCXXAssumeAttrImpl}
+
 mutable struct CXCodeAlignAttrImpl <: AbstractCXImpl end
 
 const CXCodeAlignAttr = Ptr{CXCodeAlignAttrImpl}
@@ -1557,6 +1681,14 @@ const CXCodeAlignAttr = Ptr{CXCodeAlignAttrImpl}
 mutable struct CXFallThroughAttrImpl <: AbstractCXImpl end
 
 const CXFallThroughAttr = Ptr{CXFallThroughAttrImpl}
+
+mutable struct CXHLSLControlFlowHintAttrImpl <: AbstractCXImpl end
+
+const CXHLSLControlFlowHintAttr = Ptr{CXHLSLControlFlowHintAttrImpl}
+
+mutable struct CXHLSLLoopHintAttrImpl <: AbstractCXImpl end
+
+const CXHLSLLoopHintAttr = Ptr{CXHLSLLoopHintAttrImpl}
 
 mutable struct CXLikelyAttrImpl <: AbstractCXImpl end
 
@@ -1614,6 +1746,14 @@ mutable struct CXCDeclAttrImpl <: AbstractCXImpl end
 
 const CXCDeclAttr = Ptr{CXCDeclAttrImpl}
 
+mutable struct CXCountedByAttrImpl <: AbstractCXImpl end
+
+const CXCountedByAttr = Ptr{CXCountedByAttrImpl}
+
+mutable struct CXCountedByOrNullAttrImpl <: AbstractCXImpl end
+
+const CXCountedByOrNullAttr = Ptr{CXCountedByOrNullAttrImpl}
+
 mutable struct CXFastCallAttrImpl <: AbstractCXImpl end
 
 const CXFastCallAttr = Ptr{CXFastCallAttrImpl}
@@ -1625,6 +1765,10 @@ const CXIntelOclBiccAttr = Ptr{CXIntelOclBiccAttrImpl}
 mutable struct CXLifetimeBoundAttrImpl <: AbstractCXImpl end
 
 const CXLifetimeBoundAttr = Ptr{CXLifetimeBoundAttrImpl}
+
+mutable struct CXLifetimeCaptureByAttrImpl <: AbstractCXImpl end
+
+const CXLifetimeCaptureByAttr = Ptr{CXLifetimeCaptureByAttrImpl}
 
 mutable struct CXM68kRTDAttrImpl <: AbstractCXImpl end
 
@@ -1658,9 +1802,25 @@ mutable struct CXPreserveMostAttrImpl <: AbstractCXImpl end
 
 const CXPreserveMostAttr = Ptr{CXPreserveMostAttrImpl}
 
+mutable struct CXPreserveNoneAttrImpl <: AbstractCXImpl end
+
+const CXPreserveNoneAttr = Ptr{CXPreserveNoneAttrImpl}
+
+mutable struct CXRISCVVectorCCAttrImpl <: AbstractCXImpl end
+
+const CXRISCVVectorCCAttr = Ptr{CXRISCVVectorCCAttrImpl}
+
 mutable struct CXRegCallAttrImpl <: AbstractCXImpl end
 
 const CXRegCallAttr = Ptr{CXRegCallAttrImpl}
+
+mutable struct CXSizedByAttrImpl <: AbstractCXImpl end
+
+const CXSizedByAttr = Ptr{CXSizedByAttrImpl}
+
+mutable struct CXSizedByOrNullAttrImpl <: AbstractCXImpl end
+
+const CXSizedByOrNullAttr = Ptr{CXSizedByOrNullAttrImpl}
 
 mutable struct CXStdCallAttrImpl <: AbstractCXImpl end
 
@@ -1669,6 +1829,10 @@ const CXStdCallAttr = Ptr{CXStdCallAttrImpl}
 mutable struct CXSwiftAsyncCallAttrImpl <: AbstractCXImpl end
 
 const CXSwiftAsyncCallAttr = Ptr{CXSwiftAsyncCallAttrImpl}
+
+mutable struct CXSwiftAttrAttrImpl <: AbstractCXImpl end
+
+const CXSwiftAttrAttr = Ptr{CXSwiftAttrAttrImpl}
 
 mutable struct CXSwiftCallAttrImpl <: AbstractCXImpl end
 
@@ -1682,9 +1846,21 @@ mutable struct CXThisCallAttrImpl <: AbstractCXImpl end
 
 const CXThisCallAttr = Ptr{CXThisCallAttrImpl}
 
+mutable struct CXTypeNullableAttrImpl <: AbstractCXImpl end
+
+const CXTypeNullableAttr = Ptr{CXTypeNullableAttrImpl}
+
 mutable struct CXVectorCallAttrImpl <: AbstractCXImpl end
 
 const CXVectorCallAttr = Ptr{CXVectorCallAttrImpl}
+
+mutable struct CXAnnotateAttrImpl <: AbstractCXImpl end
+
+const CXAnnotateAttr = Ptr{CXAnnotateAttrImpl}
+
+mutable struct CXHLSLParamModifierAttrImpl <: AbstractCXImpl end
+
+const CXHLSLParamModifierAttr = Ptr{CXHLSLParamModifierAttrImpl}
 
 mutable struct CXSwiftAsyncContextAttrImpl <: AbstractCXImpl end
 
@@ -1701,10 +1877,6 @@ const CXSwiftErrorResultAttr = Ptr{CXSwiftErrorResultAttrImpl}
 mutable struct CXSwiftIndirectResultAttrImpl <: AbstractCXImpl end
 
 const CXSwiftIndirectResultAttr = Ptr{CXSwiftIndirectResultAttrImpl}
-
-mutable struct CXAnnotateAttrImpl <: AbstractCXImpl end
-
-const CXAnnotateAttr = Ptr{CXAnnotateAttrImpl}
 
 mutable struct CXCFConsumedAttrImpl <: AbstractCXImpl end
 
@@ -1738,17 +1910,33 @@ mutable struct CXUseHandleAttrImpl <: AbstractCXImpl end
 
 const CXUseHandleAttr = Ptr{CXUseHandleAttrImpl}
 
+mutable struct CXHLSLPackOffsetAttrImpl <: AbstractCXImpl end
+
+const CXHLSLPackOffsetAttr = Ptr{CXHLSLPackOffsetAttrImpl}
+
 mutable struct CXHLSLSV_DispatchThreadIDAttrImpl <: AbstractCXImpl end
 
 const CXHLSLSV_DispatchThreadIDAttr = Ptr{CXHLSLSV_DispatchThreadIDAttrImpl}
+
+mutable struct CXHLSLSV_GroupIDAttrImpl <: AbstractCXImpl end
+
+const CXHLSLSV_GroupIDAttr = Ptr{CXHLSLSV_GroupIDAttrImpl}
 
 mutable struct CXHLSLSV_GroupIndexAttrImpl <: AbstractCXImpl end
 
 const CXHLSLSV_GroupIndexAttr = Ptr{CXHLSLSV_GroupIndexAttrImpl}
 
+mutable struct CXHLSLSV_GroupThreadIDAttrImpl <: AbstractCXImpl end
+
+const CXHLSLSV_GroupThreadIDAttr = Ptr{CXHLSLSV_GroupThreadIDAttrImpl}
+
 mutable struct CXAMDGPUFlatWorkGroupSizeAttrImpl <: AbstractCXImpl end
 
 const CXAMDGPUFlatWorkGroupSizeAttr = Ptr{CXAMDGPUFlatWorkGroupSizeAttrImpl}
+
+mutable struct CXAMDGPUMaxNumWorkGroupsAttrImpl <: AbstractCXImpl end
+
+const CXAMDGPUMaxNumWorkGroupsAttr = Ptr{CXAMDGPUMaxNumWorkGroupsAttrImpl}
 
 mutable struct CXAMDGPUNumSGPRAttrImpl <: AbstractCXImpl end
 
@@ -1866,10 +2054,6 @@ mutable struct CXAssumeAlignedAttrImpl <: AbstractCXImpl end
 
 const CXAssumeAlignedAttr = Ptr{CXAssumeAlignedAttrImpl}
 
-mutable struct CXAssumptionAttrImpl <: AbstractCXImpl end
-
-const CXAssumptionAttr = Ptr{CXAssumptionAttrImpl}
-
 mutable struct CXAvailabilityAttrImpl <: AbstractCXImpl end
 
 const CXAvailabilityAttr = Ptr{CXAvailabilityAttrImpl}
@@ -1877,6 +2061,10 @@ const CXAvailabilityAttr = Ptr{CXAvailabilityAttrImpl}
 mutable struct CXAvailableOnlyInDefaultEvalMethodAttrImpl <: AbstractCXImpl end
 
 const CXAvailableOnlyInDefaultEvalMethodAttr = Ptr{CXAvailableOnlyInDefaultEvalMethodAttrImpl}
+
+mutable struct CXBPFFastCallAttrImpl <: AbstractCXImpl end
+
+const CXBPFFastCallAttr = Ptr{CXBPFFastCallAttrImpl}
 
 mutable struct CXBPFPreserveAccessIndexAttrImpl <: AbstractCXImpl end
 
@@ -1954,6 +2142,10 @@ mutable struct CXCUDAGlobalAttrImpl <: AbstractCXImpl end
 
 const CXCUDAGlobalAttr = Ptr{CXCUDAGlobalAttrImpl}
 
+mutable struct CXCUDAGridConstantAttrImpl <: AbstractCXImpl end
+
+const CXCUDAGridConstantAttr = Ptr{CXCUDAGridConstantAttrImpl}
+
 mutable struct CXCUDAHostAttrImpl <: AbstractCXImpl end
 
 const CXCUDAHostAttr = Ptr{CXCUDAHostAttrImpl}
@@ -1993,6 +2185,10 @@ const CXCapturedRecordAttr = Ptr{CXCapturedRecordAttrImpl}
 mutable struct CXCleanupAttrImpl <: AbstractCXImpl end
 
 const CXCleanupAttr = Ptr{CXCleanupAttrImpl}
+
+mutable struct CXClspvLibclcBuiltinAttrImpl <: AbstractCXImpl end
+
+const CXClspvLibclcBuiltinAttr = Ptr{CXClspvLibclcBuiltinAttrImpl}
 
 mutable struct CXCmseNSEntryAttrImpl <: AbstractCXImpl end
 
@@ -2042,6 +2238,14 @@ mutable struct CXConvergentAttrImpl <: AbstractCXImpl end
 
 const CXConvergentAttr = Ptr{CXConvergentAttrImpl}
 
+mutable struct CXCoroAwaitElidableAttrImpl <: AbstractCXImpl end
+
+const CXCoroAwaitElidableAttr = Ptr{CXCoroAwaitElidableAttrImpl}
+
+mutable struct CXCoroAwaitElidableArgumentAttrImpl <: AbstractCXImpl end
+
+const CXCoroAwaitElidableArgumentAttr = Ptr{CXCoroAwaitElidableArgumentAttrImpl}
+
 mutable struct CXCoroDisableLifetimeBoundAttrImpl <: AbstractCXImpl end
 
 const CXCoroDisableLifetimeBoundAttr = Ptr{CXCoroDisableLifetimeBoundAttrImpl}
@@ -2061,10 +2265,6 @@ const CXCoroReturnTypeAttr = Ptr{CXCoroReturnTypeAttrImpl}
 mutable struct CXCoroWrapperAttrImpl <: AbstractCXImpl end
 
 const CXCoroWrapperAttr = Ptr{CXCoroWrapperAttrImpl}
-
-mutable struct CXCountedByAttrImpl <: AbstractCXImpl end
-
-const CXCountedByAttr = Ptr{CXCountedByAttrImpl}
 
 mutable struct CXDLLExportAttrImpl <: AbstractCXImpl end
 
@@ -2138,6 +2338,10 @@ mutable struct CXExclusiveTrylockFunctionAttrImpl <: AbstractCXImpl end
 
 const CXExclusiveTrylockFunctionAttr = Ptr{CXExclusiveTrylockFunctionAttrImpl}
 
+mutable struct CXExplicitInitAttrImpl <: AbstractCXImpl end
+
+const CXExplicitInitAttr = Ptr{CXExplicitInitAttrImpl}
+
 mutable struct CXExternalSourceSymbolAttrImpl <: AbstractCXImpl end
 
 const CXExternalSourceSymbolAttr = Ptr{CXExternalSourceSymbolAttrImpl}
@@ -2198,9 +2402,17 @@ mutable struct CXHLSLShaderAttrImpl <: AbstractCXImpl end
 
 const CXHLSLShaderAttr = Ptr{CXHLSLShaderAttrImpl}
 
+mutable struct CXHLSLWaveSizeAttrImpl <: AbstractCXImpl end
+
+const CXHLSLWaveSizeAttr = Ptr{CXHLSLWaveSizeAttrImpl}
+
 mutable struct CXHotAttrImpl <: AbstractCXImpl end
 
 const CXHotAttr = Ptr{CXHotAttrImpl}
+
+mutable struct CXHybridPatchableAttrImpl <: AbstractCXImpl end
+
+const CXHybridPatchableAttr = Ptr{CXHybridPatchableAttrImpl}
 
 mutable struct CXIBActionAttrImpl <: AbstractCXImpl end
 
@@ -2350,6 +2562,10 @@ mutable struct CXNoCommonAttrImpl <: AbstractCXImpl end
 
 const CXNoCommonAttr = Ptr{CXNoCommonAttrImpl}
 
+mutable struct CXNoConvergentAttrImpl <: AbstractCXImpl end
+
+const CXNoConvergentAttr = Ptr{CXNoConvergentAttrImpl}
+
 mutable struct CXNoDebugAttrImpl <: AbstractCXImpl end
 
 const CXNoDebugAttr = Ptr{CXNoDebugAttrImpl}
@@ -2390,6 +2606,10 @@ mutable struct CXNoSanitizeAttrImpl <: AbstractCXImpl end
 
 const CXNoSanitizeAttr = Ptr{CXNoSanitizeAttrImpl}
 
+mutable struct CXNoSpecializationsAttrImpl <: AbstractCXImpl end
+
+const CXNoSpecializationsAttr = Ptr{CXNoSpecializationsAttrImpl}
+
 mutable struct CXNoSpeculativeLoadHardeningAttrImpl <: AbstractCXImpl end
 
 const CXNoSpeculativeLoadHardeningAttr = Ptr{CXNoSpeculativeLoadHardeningAttrImpl}
@@ -2410,6 +2630,10 @@ mutable struct CXNoThrowAttrImpl <: AbstractCXImpl end
 
 const CXNoThrowAttr = Ptr{CXNoThrowAttrImpl}
 
+mutable struct CXNoTrivialAutoVarInitAttrImpl <: AbstractCXImpl end
+
+const CXNoTrivialAutoVarInitAttr = Ptr{CXNoTrivialAutoVarInitAttrImpl}
+
 mutable struct CXNoUniqueAddressAttrImpl <: AbstractCXImpl end
 
 const CXNoUniqueAddressAttr = Ptr{CXNoUniqueAddressAttrImpl}
@@ -2425,6 +2649,10 @@ const CXNotTailCalledAttr = Ptr{CXNotTailCalledAttrImpl}
 mutable struct CXOMPAllocateDeclAttrImpl <: AbstractCXImpl end
 
 const CXOMPAllocateDeclAttr = Ptr{CXOMPAllocateDeclAttrImpl}
+
+mutable struct CXOMPAssumeAttrImpl <: AbstractCXImpl end
+
+const CXOMPAssumeAttr = Ptr{CXOMPAssumeAttrImpl}
 
 mutable struct CXOMPCaptureNoInitAttrImpl <: AbstractCXImpl end
 
@@ -2654,6 +2882,10 @@ mutable struct CXSYCLKernelAttrImpl <: AbstractCXImpl end
 
 const CXSYCLKernelAttr = Ptr{CXSYCLKernelAttrImpl}
 
+mutable struct CXSYCLKernelEntryPointAttrImpl <: AbstractCXImpl end
+
+const CXSYCLKernelEntryPointAttr = Ptr{CXSYCLKernelEntryPointAttrImpl}
+
 mutable struct CXSYCLSpecialClassAttrImpl <: AbstractCXImpl end
 
 const CXSYCLSpecialClassAttr = Ptr{CXSYCLSpecialClassAttrImpl}
@@ -2709,10 +2941,6 @@ const CXSwiftAsyncErrorAttr = Ptr{CXSwiftAsyncErrorAttrImpl}
 mutable struct CXSwiftAsyncNameAttrImpl <: AbstractCXImpl end
 
 const CXSwiftAsyncNameAttr = Ptr{CXSwiftAsyncNameAttrImpl}
-
-mutable struct CXSwiftAttrAttrImpl <: AbstractCXImpl end
-
-const CXSwiftAttrAttr = Ptr{CXSwiftAttrAttrImpl}
 
 mutable struct CXSwiftBridgeAttrImpl <: AbstractCXImpl end
 
@@ -2813,6 +3041,10 @@ const CXUsingIfExistsAttr = Ptr{CXUsingIfExistsAttrImpl}
 mutable struct CXUuidAttrImpl <: AbstractCXImpl end
 
 const CXUuidAttr = Ptr{CXUuidAttrImpl}
+
+mutable struct CXVTablePointerAuthenticationAttrImpl <: AbstractCXImpl end
+
+const CXVTablePointerAuthenticationAttr = Ptr{CXVTablePointerAuthenticationAttrImpl}
 
 mutable struct CXVecReturnAttrImpl <: AbstractCXImpl end
 
@@ -2982,10 +3214,6 @@ mutable struct CXOverloadableAttrImpl <: AbstractCXImpl end
 
 const CXOverloadableAttr = Ptr{CXOverloadableAttrImpl}
 
-mutable struct CXRenderScriptKernelAttrImpl <: AbstractCXImpl end
-
-const CXRenderScriptKernelAttr = Ptr{CXRenderScriptKernelAttrImpl}
-
 mutable struct CXSwiftObjCMembersAttrImpl <: AbstractCXImpl end
 
 const CXSwiftObjCMembersAttr = Ptr{CXSwiftObjCMembersAttrImpl}
@@ -3018,6 +3246,10 @@ mutable struct CXConstantArrayTypeImpl <: AbstractCXImpl end
 
 const CXConstantArrayType = Ptr{CXConstantArrayTypeImpl}
 
+mutable struct CXArrayParameterTypeImpl <: AbstractCXImpl end
+
+const CXArrayParameterType = Ptr{CXArrayParameterTypeImpl}
+
 mutable struct CXDependentSizedArrayTypeImpl <: AbstractCXImpl end
 
 const CXDependentSizedArrayType = Ptr{CXDependentSizedArrayTypeImpl}
@@ -3049,6 +3281,14 @@ const CXBitIntType = Ptr{CXBitIntTypeImpl}
 mutable struct CXBlockPointerTypeImpl <: AbstractCXImpl end
 
 const CXBlockPointerType = Ptr{CXBlockPointerTypeImpl}
+
+mutable struct CXBoundsAttributedTypeImpl <: AbstractCXImpl end
+
+const CXBoundsAttributedType = Ptr{CXBoundsAttributedTypeImpl}
+
+mutable struct CXCountAttributedTypeImpl <: AbstractCXImpl end
+
+const CXCountAttributedType = Ptr{CXCountAttributedTypeImpl}
 
 mutable struct CXBuiltinTypeImpl <: AbstractCXImpl end
 
@@ -3114,6 +3354,10 @@ mutable struct CXFunctionProtoTypeImpl <: AbstractCXImpl end
 
 const CXFunctionProtoType = Ptr{CXFunctionProtoTypeImpl}
 
+mutable struct CXHLSLAttributedResourceTypeImpl <: AbstractCXImpl end
+
+const CXHLSLAttributedResourceType = Ptr{CXHLSLAttributedResourceTypeImpl}
+
 mutable struct CXInjectedClassNameTypeImpl <: AbstractCXImpl end
 
 const CXInjectedClassNameType = Ptr{CXInjectedClassNameTypeImpl}
@@ -3157,6 +3401,10 @@ const CXObjCTypeParamType = Ptr{CXObjCTypeParamTypeImpl}
 mutable struct CXPackExpansionTypeImpl <: AbstractCXImpl end
 
 const CXPackExpansionType = Ptr{CXPackExpansionTypeImpl}
+
+mutable struct CXPackIndexingTypeImpl <: AbstractCXImpl end
+
+const CXPackIndexingType = Ptr{CXPackIndexingTypeImpl}
 
 mutable struct CXParenTypeImpl <: AbstractCXImpl end
 
@@ -3254,6 +3502,10 @@ mutable struct CXConstantArrayTypeLocImpl <: AbstractCXImpl end
 
 const CXConstantArrayTypeLoc = Ptr{CXConstantArrayTypeLocImpl}
 
+mutable struct CXArrayParameterTypeLocImpl <: AbstractCXImpl end
+
+const CXArrayParameterTypeLoc = Ptr{CXArrayParameterTypeLocImpl}
+
 mutable struct CXDependentSizedArrayTypeLocImpl <: AbstractCXImpl end
 
 const CXDependentSizedArrayTypeLoc = Ptr{CXDependentSizedArrayTypeLocImpl}
@@ -3285,6 +3537,10 @@ const CXBitIntTypeLoc = Ptr{CXBitIntTypeLocImpl}
 mutable struct CXBlockPointerTypeLocImpl <: AbstractCXImpl end
 
 const CXBlockPointerTypeLoc = Ptr{CXBlockPointerTypeLocImpl}
+
+mutable struct CXCountAttributedTypeLocImpl <: AbstractCXImpl end
+
+const CXCountAttributedTypeLoc = Ptr{CXCountAttributedTypeLocImpl}
 
 mutable struct CXBuiltinTypeLocImpl <: AbstractCXImpl end
 
@@ -3342,6 +3598,10 @@ mutable struct CXFunctionProtoTypeLocImpl <: AbstractCXImpl end
 
 const CXFunctionProtoTypeLoc = Ptr{CXFunctionProtoTypeLocImpl}
 
+mutable struct CXHLSLAttributedResourceTypeLocImpl <: AbstractCXImpl end
+
+const CXHLSLAttributedResourceTypeLoc = Ptr{CXHLSLAttributedResourceTypeLocImpl}
+
 mutable struct CXInjectedClassNameTypeLocImpl <: AbstractCXImpl end
 
 const CXInjectedClassNameTypeLoc = Ptr{CXInjectedClassNameTypeLocImpl}
@@ -3381,6 +3641,10 @@ const CXObjCTypeParamTypeLoc = Ptr{CXObjCTypeParamTypeLocImpl}
 mutable struct CXPackExpansionTypeLocImpl <: AbstractCXImpl end
 
 const CXPackExpansionTypeLoc = Ptr{CXPackExpansionTypeLocImpl}
+
+mutable struct CXPackIndexingTypeLocImpl <: AbstractCXImpl end
+
+const CXPackIndexingTypeLoc = Ptr{CXPackIndexingTypeLocImpl}
 
 mutable struct CXParenTypeLocImpl <: AbstractCXImpl end
 
@@ -4684,8 +4948,9 @@ end
     CXLangAS_ptr32_uptr = 0x0000000000000011
     CXLangAS_ptr64 = 0x0000000000000012
     CXLangAS_hlsl_groupshared = 0x0000000000000013
-    CXLangAS_wasm_funcref = 0x0000000000000014
-    CXLangAS_FirstTargetAddressSpace = 0x0000000000000015
+    CXLangAS_hlsl_constant = 0x0000000000000014
+    CXLangAS_wasm_funcref = 0x0000000000000015
+    CXLangAS_FirstTargetAddressSpace = 0x0000000000000016
 end
 
 @enum CXExceptionSpecificationType::UInt32 begin
@@ -4875,419 +5140,455 @@ end
 
 @enum CXAttrKind::UInt32 begin
     CXAttrKind_AddressSpace = 0
-    CXAttrKind_AnnotateType = 1
-    CXAttrKind_ArmIn = 2
-    CXAttrKind_ArmInOut = 3
-    CXAttrKind_ArmMveStrictPolymorphism = 4
-    CXAttrKind_ArmOut = 5
-    CXAttrKind_ArmPreserves = 6
-    CXAttrKind_ArmStreaming = 7
-    CXAttrKind_ArmStreamingCompatible = 8
-    CXAttrKind_BTFTypeTag = 9
-    CXAttrKind_CmseNSCall = 10
-    CXAttrKind_HLSLGroupSharedAddressSpace = 11
-    CXAttrKind_HLSLParamModifier = 12
-    CXAttrKind_NoDeref = 13
-    CXAttrKind_ObjCGC = 14
-    CXAttrKind_ObjCInertUnsafeUnretained = 15
-    CXAttrKind_ObjCKindOf = 16
-    CXAttrKind_OpenCLConstantAddressSpace = 17
-    CXAttrKind_OpenCLGenericAddressSpace = 18
-    CXAttrKind_OpenCLGlobalAddressSpace = 19
-    CXAttrKind_OpenCLGlobalDeviceAddressSpace = 20
-    CXAttrKind_OpenCLGlobalHostAddressSpace = 21
-    CXAttrKind_OpenCLLocalAddressSpace = 22
-    CXAttrKind_OpenCLPrivateAddressSpace = 23
-    CXAttrKind_Ptr32 = 24
-    CXAttrKind_Ptr64 = 25
-    CXAttrKind_SPtr = 26
-    CXAttrKind_TypeNonNull = 27
-    CXAttrKind_TypeNullUnspecified = 28
-    CXAttrKind_TypeNullable = 29
-    CXAttrKind_TypeNullableResult = 30
-    CXAttrKind_UPtr = 31
-    CXAttrKind_WebAssemblyFuncref = 32
-    CXAttrKind_CodeAlign = 33
-    CXAttrKind_FallThrough = 34
-    CXAttrKind_Likely = 35
-    CXAttrKind_MustTail = 36
-    CXAttrKind_OpenCLUnrollHint = 37
-    CXAttrKind_Unlikely = 38
-    CXAttrKind_AlwaysInline = 39
-    CXAttrKind_NoInline = 40
-    CXAttrKind_NoMerge = 41
-    CXAttrKind_Suppress = 42
-    CXAttrKind_AArch64SVEPcs = 43
-    CXAttrKind_AArch64VectorPcs = 44
-    CXAttrKind_AMDGPUKernelCall = 45
-    CXAttrKind_AcquireHandle = 46
-    CXAttrKind_AnyX86NoCfCheck = 47
-    CXAttrKind_CDecl = 48
-    CXAttrKind_FastCall = 49
-    CXAttrKind_IntelOclBicc = 50
-    CXAttrKind_LifetimeBound = 51
-    CXAttrKind_M68kRTD = 52
-    CXAttrKind_MSABI = 53
-    CXAttrKind_NSReturnsRetained = 54
-    CXAttrKind_ObjCOwnership = 55
-    CXAttrKind_Pascal = 56
-    CXAttrKind_Pcs = 57
-    CXAttrKind_PreserveAll = 58
-    CXAttrKind_PreserveMost = 59
-    CXAttrKind_RegCall = 60
-    CXAttrKind_StdCall = 61
-    CXAttrKind_SwiftAsyncCall = 62
-    CXAttrKind_SwiftCall = 63
-    CXAttrKind_SysVABI = 64
-    CXAttrKind_ThisCall = 65
-    CXAttrKind_VectorCall = 66
-    CXAttrKind_SwiftAsyncContext = 67
-    CXAttrKind_SwiftContext = 68
-    CXAttrKind_SwiftErrorResult = 69
-    CXAttrKind_SwiftIndirectResult = 70
-    CXAttrKind_Annotate = 71
-    CXAttrKind_CFConsumed = 72
-    CXAttrKind_CarriesDependency = 73
-    CXAttrKind_NSConsumed = 74
-    CXAttrKind_NonNull = 75
-    CXAttrKind_OSConsumed = 76
-    CXAttrKind_PassObjectSize = 77
-    CXAttrKind_ReleaseHandle = 78
-    CXAttrKind_UseHandle = 79
-    CXAttrKind_HLSLSV_DispatchThreadID = 80
-    CXAttrKind_HLSLSV_GroupIndex = 81
-    CXAttrKind_AMDGPUFlatWorkGroupSize = 82
-    CXAttrKind_AMDGPUNumSGPR = 83
-    CXAttrKind_AMDGPUNumVGPR = 84
-    CXAttrKind_AMDGPUWavesPerEU = 85
-    CXAttrKind_ARMInterrupt = 86
-    CXAttrKind_AVRInterrupt = 87
-    CXAttrKind_AVRSignal = 88
-    CXAttrKind_AcquireCapability = 89
-    CXAttrKind_AcquiredAfter = 90
-    CXAttrKind_AcquiredBefore = 91
-    CXAttrKind_AlignMac68k = 92
-    CXAttrKind_AlignNatural = 93
-    CXAttrKind_Aligned = 94
-    CXAttrKind_AllocAlign = 95
-    CXAttrKind_AllocSize = 96
-    CXAttrKind_AlwaysDestroy = 97
-    CXAttrKind_AnalyzerNoReturn = 98
-    CXAttrKind_AnyX86Interrupt = 99
-    CXAttrKind_AnyX86NoCallerSavedRegisters = 100
-    CXAttrKind_ArcWeakrefUnavailable = 101
-    CXAttrKind_ArgumentWithTypeTag = 102
-    CXAttrKind_ArmBuiltinAlias = 103
-    CXAttrKind_ArmLocallyStreaming = 104
-    CXAttrKind_ArmNew = 105
-    CXAttrKind_Artificial = 106
-    CXAttrKind_AsmLabel = 107
-    CXAttrKind_AssertCapability = 108
-    CXAttrKind_AssertExclusiveLock = 109
-    CXAttrKind_AssertSharedLock = 110
-    CXAttrKind_AssumeAligned = 111
-    CXAttrKind_Assumption = 112
-    CXAttrKind_Availability = 113
-    CXAttrKind_AvailableOnlyInDefaultEvalMethod = 114
-    CXAttrKind_BPFPreserveAccessIndex = 115
-    CXAttrKind_BPFPreserveStaticOffset = 116
-    CXAttrKind_BTFDeclTag = 117
-    CXAttrKind_Blocks = 118
-    CXAttrKind_Builtin = 119
-    CXAttrKind_C11NoReturn = 120
-    CXAttrKind_CFAuditedTransfer = 121
-    CXAttrKind_CFGuard = 122
-    CXAttrKind_CFICanonicalJumpTable = 123
-    CXAttrKind_CFReturnsNotRetained = 124
-    CXAttrKind_CFReturnsRetained = 125
-    CXAttrKind_CFUnknownTransfer = 126
-    CXAttrKind_CPUDispatch = 127
-    CXAttrKind_CPUSpecific = 128
-    CXAttrKind_CUDAConstant = 129
-    CXAttrKind_CUDADevice = 130
-    CXAttrKind_CUDADeviceBuiltinSurfaceType = 131
-    CXAttrKind_CUDADeviceBuiltinTextureType = 132
-    CXAttrKind_CUDAGlobal = 133
-    CXAttrKind_CUDAHost = 134
-    CXAttrKind_CUDAInvalidTarget = 135
-    CXAttrKind_CUDALaunchBounds = 136
-    CXAttrKind_CUDAShared = 137
-    CXAttrKind_CXX11NoReturn = 138
-    CXAttrKind_CallableWhen = 139
-    CXAttrKind_Callback = 140
-    CXAttrKind_Capability = 141
-    CXAttrKind_CapturedRecord = 142
-    CXAttrKind_Cleanup = 143
-    CXAttrKind_CmseNSEntry = 144
-    CXAttrKind_CodeModel = 145
-    CXAttrKind_CodeSeg = 146
-    CXAttrKind_Cold = 147
-    CXAttrKind_Common = 148
-    CXAttrKind_Const = 149
-    CXAttrKind_ConstInit = 150
-    CXAttrKind_Constructor = 151
-    CXAttrKind_Consumable = 152
-    CXAttrKind_ConsumableAutoCast = 153
-    CXAttrKind_ConsumableSetOnRead = 154
-    CXAttrKind_Convergent = 155
-    CXAttrKind_CoroDisableLifetimeBound = 156
-    CXAttrKind_CoroLifetimeBound = 157
-    CXAttrKind_CoroOnlyDestroyWhenComplete = 158
-    CXAttrKind_CoroReturnType = 159
-    CXAttrKind_CoroWrapper = 160
-    CXAttrKind_CountedBy = 161
-    CXAttrKind_DLLExport = 162
-    CXAttrKind_DLLExportStaticLocal = 163
-    CXAttrKind_DLLImport = 164
-    CXAttrKind_DLLImportStaticLocal = 165
-    CXAttrKind_Deprecated = 166
-    CXAttrKind_Destructor = 167
-    CXAttrKind_DiagnoseAsBuiltin = 168
-    CXAttrKind_DiagnoseIf = 169
-    CXAttrKind_DisableSanitizerInstrumentation = 170
-    CXAttrKind_DisableTailCalls = 171
-    CXAttrKind_EmptyBases = 172
-    CXAttrKind_EnableIf = 173
-    CXAttrKind_EnforceTCB = 174
-    CXAttrKind_EnforceTCBLeaf = 175
-    CXAttrKind_EnumExtensibility = 176
-    CXAttrKind_Error = 177
-    CXAttrKind_ExcludeFromExplicitInstantiation = 178
-    CXAttrKind_ExclusiveTrylockFunction = 179
-    CXAttrKind_ExternalSourceSymbol = 180
-    CXAttrKind_Final = 181
-    CXAttrKind_FlagEnum = 182
-    CXAttrKind_Flatten = 183
-    CXAttrKind_Format = 184
-    CXAttrKind_FormatArg = 185
-    CXAttrKind_FunctionReturnThunks = 186
-    CXAttrKind_GNUInline = 187
-    CXAttrKind_GuardedBy = 188
-    CXAttrKind_GuardedVar = 189
-    CXAttrKind_HIPManaged = 190
-    CXAttrKind_HLSLNumThreads = 191
-    CXAttrKind_HLSLResource = 192
-    CXAttrKind_HLSLResourceBinding = 193
-    CXAttrKind_HLSLShader = 194
-    CXAttrKind_Hot = 195
-    CXAttrKind_IBAction = 196
-    CXAttrKind_IBOutlet = 197
-    CXAttrKind_IBOutletCollection = 198
-    CXAttrKind_InitPriority = 199
-    CXAttrKind_InternalLinkage = 200
-    CXAttrKind_LTOVisibilityPublic = 201
-    CXAttrKind_LayoutVersion = 202
-    CXAttrKind_Leaf = 203
-    CXAttrKind_LockReturned = 204
-    CXAttrKind_LocksExcluded = 205
-    CXAttrKind_M68kInterrupt = 206
-    CXAttrKind_MIGServerRoutine = 207
-    CXAttrKind_MSAllocator = 208
-    CXAttrKind_MSConstexpr = 209
-    CXAttrKind_MSInheritance = 210
-    CXAttrKind_MSNoVTable = 211
-    CXAttrKind_MSP430Interrupt = 212
-    CXAttrKind_MSStruct = 213
-    CXAttrKind_MSVtorDisp = 214
-    CXAttrKind_MaxFieldAlignment = 215
-    CXAttrKind_MayAlias = 216
-    CXAttrKind_MaybeUndef = 217
-    CXAttrKind_MicroMips = 218
-    CXAttrKind_MinSize = 219
-    CXAttrKind_MinVectorWidth = 220
-    CXAttrKind_Mips16 = 221
-    CXAttrKind_MipsInterrupt = 222
-    CXAttrKind_MipsLongCall = 223
-    CXAttrKind_MipsShortCall = 224
-    CXAttrKind_NSConsumesSelf = 225
-    CXAttrKind_NSErrorDomain = 226
-    CXAttrKind_NSReturnsAutoreleased = 227
-    CXAttrKind_NSReturnsNotRetained = 228
-    CXAttrKind_NVPTXKernel = 229
-    CXAttrKind_Naked = 230
-    CXAttrKind_NoAlias = 231
-    CXAttrKind_NoCommon = 232
-    CXAttrKind_NoDebug = 233
-    CXAttrKind_NoDestroy = 234
-    CXAttrKind_NoDuplicate = 235
-    CXAttrKind_NoInstrumentFunction = 236
-    CXAttrKind_NoMicroMips = 237
-    CXAttrKind_NoMips16 = 238
-    CXAttrKind_NoProfileFunction = 239
-    CXAttrKind_NoRandomizeLayout = 240
-    CXAttrKind_NoReturn = 241
-    CXAttrKind_NoSanitize = 242
-    CXAttrKind_NoSpeculativeLoadHardening = 243
-    CXAttrKind_NoSplitStack = 244
-    CXAttrKind_NoStackProtector = 245
-    CXAttrKind_NoThreadSafetyAnalysis = 246
-    CXAttrKind_NoThrow = 247
-    CXAttrKind_NoUniqueAddress = 248
-    CXAttrKind_NoUwtable = 249
-    CXAttrKind_NotTailCalled = 250
-    CXAttrKind_OMPAllocateDecl = 251
-    CXAttrKind_OMPCaptureNoInit = 252
-    CXAttrKind_OMPDeclareTargetDecl = 253
-    CXAttrKind_OMPDeclareVariant = 254
-    CXAttrKind_OMPThreadPrivateDecl = 255
-    CXAttrKind_OSConsumesThis = 256
-    CXAttrKind_OSReturnsNotRetained = 257
-    CXAttrKind_OSReturnsRetained = 258
-    CXAttrKind_OSReturnsRetainedOnNonZero = 259
-    CXAttrKind_OSReturnsRetainedOnZero = 260
-    CXAttrKind_ObjCBridge = 261
-    CXAttrKind_ObjCBridgeMutable = 262
-    CXAttrKind_ObjCBridgeRelated = 263
-    CXAttrKind_ObjCException = 264
-    CXAttrKind_ObjCExplicitProtocolImpl = 265
-    CXAttrKind_ObjCExternallyRetained = 266
-    CXAttrKind_ObjCIndependentClass = 267
-    CXAttrKind_ObjCMethodFamily = 268
-    CXAttrKind_ObjCNSObject = 269
-    CXAttrKind_ObjCPreciseLifetime = 270
-    CXAttrKind_ObjCRequiresPropertyDefs = 271
-    CXAttrKind_ObjCRequiresSuper = 272
-    CXAttrKind_ObjCReturnsInnerPointer = 273
-    CXAttrKind_ObjCRootClass = 274
-    CXAttrKind_ObjCSubclassingRestricted = 275
-    CXAttrKind_OpenCLIntelReqdSubGroupSize = 276
-    CXAttrKind_OpenCLKernel = 277
-    CXAttrKind_OptimizeNone = 278
-    CXAttrKind_Override = 279
-    CXAttrKind_Owner = 280
-    CXAttrKind_Ownership = 281
-    CXAttrKind_Packed = 282
-    CXAttrKind_ParamTypestate = 283
-    CXAttrKind_PatchableFunctionEntry = 284
-    CXAttrKind_Pointer = 285
-    CXAttrKind_PragmaClangBSSSection = 286
-    CXAttrKind_PragmaClangDataSection = 287
-    CXAttrKind_PragmaClangRelroSection = 288
-    CXAttrKind_PragmaClangRodataSection = 289
-    CXAttrKind_PragmaClangTextSection = 290
-    CXAttrKind_PreferredName = 291
-    CXAttrKind_PreferredType = 292
-    CXAttrKind_PtGuardedBy = 293
-    CXAttrKind_PtGuardedVar = 294
-    CXAttrKind_Pure = 295
-    CXAttrKind_RISCVInterrupt = 296
-    CXAttrKind_RandomizeLayout = 297
-    CXAttrKind_ReadOnlyPlacement = 298
-    CXAttrKind_Reinitializes = 299
-    CXAttrKind_ReleaseCapability = 300
-    CXAttrKind_ReqdWorkGroupSize = 301
-    CXAttrKind_RequiresCapability = 302
-    CXAttrKind_Restrict = 303
-    CXAttrKind_Retain = 304
-    CXAttrKind_ReturnTypestate = 305
-    CXAttrKind_ReturnsNonNull = 306
-    CXAttrKind_ReturnsTwice = 307
-    CXAttrKind_SYCLKernel = 308
-    CXAttrKind_SYCLSpecialClass = 309
-    CXAttrKind_ScopedLockable = 310
-    CXAttrKind_Section = 311
-    CXAttrKind_SelectAny = 312
-    CXAttrKind_Sentinel = 313
-    CXAttrKind_SetTypestate = 314
-    CXAttrKind_SharedTrylockFunction = 315
-    CXAttrKind_SpeculativeLoadHardening = 316
-    CXAttrKind_StandaloneDebug = 317
-    CXAttrKind_StrictFP = 318
-    CXAttrKind_StrictGuardStackCheck = 319
-    CXAttrKind_SwiftAsync = 320
-    CXAttrKind_SwiftAsyncError = 321
-    CXAttrKind_SwiftAsyncName = 322
-    CXAttrKind_SwiftAttr = 323
-    CXAttrKind_SwiftBridge = 324
-    CXAttrKind_SwiftBridgedTypedef = 325
-    CXAttrKind_SwiftError = 326
-    CXAttrKind_SwiftImportAsNonGeneric = 327
-    CXAttrKind_SwiftImportPropertyAsAccessors = 328
-    CXAttrKind_SwiftName = 329
-    CXAttrKind_SwiftNewType = 330
-    CXAttrKind_SwiftPrivate = 331
-    CXAttrKind_TLSModel = 332
-    CXAttrKind_Target = 333
-    CXAttrKind_TargetClones = 334
-    CXAttrKind_TargetVersion = 335
-    CXAttrKind_TestTypestate = 336
-    CXAttrKind_TransparentUnion = 337
-    CXAttrKind_TrivialABI = 338
-    CXAttrKind_TryAcquireCapability = 339
-    CXAttrKind_TypeTagForDatatype = 340
-    CXAttrKind_TypeVisibility = 341
-    CXAttrKind_Unavailable = 342
-    CXAttrKind_Uninitialized = 343
-    CXAttrKind_UnsafeBufferUsage = 344
-    CXAttrKind_Unused = 345
-    CXAttrKind_Used = 346
-    CXAttrKind_UsingIfExists = 347
-    CXAttrKind_Uuid = 348
-    CXAttrKind_VecReturn = 349
-    CXAttrKind_VecTypeHint = 350
-    CXAttrKind_Visibility = 351
-    CXAttrKind_WarnUnused = 352
-    CXAttrKind_WarnUnusedResult = 353
-    CXAttrKind_Weak = 354
-    CXAttrKind_WeakImport = 355
-    CXAttrKind_WeakRef = 356
-    CXAttrKind_WebAssemblyExportName = 357
-    CXAttrKind_WebAssemblyImportModule = 358
-    CXAttrKind_WebAssemblyImportName = 359
-    CXAttrKind_WorkGroupSizeHint = 360
-    CXAttrKind_X86ForceAlignArgPointer = 361
-    CXAttrKind_XRayInstrument = 362
-    CXAttrKind_XRayLogArgs = 363
-    CXAttrKind_ZeroCallUsedRegs = 364
-    CXAttrKind_AbiTag = 365
-    CXAttrKind_Alias = 366
-    CXAttrKind_AlignValue = 367
-    CXAttrKind_BuiltinAlias = 368
-    CXAttrKind_CalledOnce = 369
-    CXAttrKind_IFunc = 370
-    CXAttrKind_InitSeg = 371
-    CXAttrKind_LoaderUninitialized = 372
-    CXAttrKind_LoopHint = 373
-    CXAttrKind_Mode = 374
-    CXAttrKind_NoBuiltin = 375
-    CXAttrKind_NoEscape = 376
-    CXAttrKind_OMPCaptureKind = 377
-    CXAttrKind_OMPDeclareSimdDecl = 378
-    CXAttrKind_OMPReferencedVar = 379
-    CXAttrKind_ObjCBoxable = 380
-    CXAttrKind_ObjCClassStub = 381
-    CXAttrKind_ObjCDesignatedInitializer = 382
-    CXAttrKind_ObjCDirect = 383
-    CXAttrKind_ObjCDirectMembers = 384
-    CXAttrKind_ObjCNonLazyClass = 385
-    CXAttrKind_ObjCNonRuntimeProtocol = 386
-    CXAttrKind_ObjCRuntimeName = 387
-    CXAttrKind_ObjCRuntimeVisible = 388
-    CXAttrKind_OpenCLAccess = 389
-    CXAttrKind_Overloadable = 390
-    CXAttrKind_RenderScriptKernel = 391
-    CXAttrKind_SwiftObjCMembers = 392
-    CXAttrKind_SwiftVersionedAddition = 393
-    CXAttrKind_SwiftVersionedRemoval = 394
-    CXAttrKind_Thread = 395
+    CXAttrKind_Allocating = 1
+    CXAttrKind_AnnotateType = 2
+    CXAttrKind_ArmAgnostic = 3
+    CXAttrKind_ArmIn = 4
+    CXAttrKind_ArmInOut = 5
+    CXAttrKind_ArmMveStrictPolymorphism = 6
+    CXAttrKind_ArmOut = 7
+    CXAttrKind_ArmPreserves = 8
+    CXAttrKind_ArmStreaming = 9
+    CXAttrKind_ArmStreamingCompatible = 10
+    CXAttrKind_BTFTypeTag = 11
+    CXAttrKind_Blocking = 12
+    CXAttrKind_CmseNSCall = 13
+    CXAttrKind_HLSLContainedType = 14
+    CXAttrKind_HLSLGroupSharedAddressSpace = 15
+    CXAttrKind_HLSLROV = 16
+    CXAttrKind_HLSLRawBuffer = 17
+    CXAttrKind_HLSLResourceClass = 18
+    CXAttrKind_NoDeref = 19
+    CXAttrKind_NonAllocating = 20
+    CXAttrKind_NonBlocking = 21
+    CXAttrKind_ObjCGC = 22
+    CXAttrKind_ObjCInertUnsafeUnretained = 23
+    CXAttrKind_ObjCKindOf = 24
+    CXAttrKind_OpenCLConstantAddressSpace = 25
+    CXAttrKind_OpenCLGenericAddressSpace = 26
+    CXAttrKind_OpenCLGlobalAddressSpace = 27
+    CXAttrKind_OpenCLGlobalDeviceAddressSpace = 28
+    CXAttrKind_OpenCLGlobalHostAddressSpace = 29
+    CXAttrKind_OpenCLLocalAddressSpace = 30
+    CXAttrKind_OpenCLPrivateAddressSpace = 31
+    CXAttrKind_Ptr32 = 32
+    CXAttrKind_Ptr64 = 33
+    CXAttrKind_SPtr = 34
+    CXAttrKind_TypeNonNull = 35
+    CXAttrKind_TypeNullUnspecified = 36
+    CXAttrKind_TypeNullableResult = 37
+    CXAttrKind_UPtr = 38
+    CXAttrKind_WebAssemblyFuncref = 39
+    CXAttrKind_CXXAssume = 40
+    CXAttrKind_CodeAlign = 41
+    CXAttrKind_FallThrough = 42
+    CXAttrKind_HLSLControlFlowHint = 43
+    CXAttrKind_HLSLLoopHint = 44
+    CXAttrKind_Likely = 45
+    CXAttrKind_MustTail = 46
+    CXAttrKind_OpenCLUnrollHint = 47
+    CXAttrKind_Unlikely = 48
+    CXAttrKind_AlwaysInline = 49
+    CXAttrKind_NoInline = 50
+    CXAttrKind_NoMerge = 51
+    CXAttrKind_Suppress = 52
+    CXAttrKind_AArch64SVEPcs = 53
+    CXAttrKind_AArch64VectorPcs = 54
+    CXAttrKind_AMDGPUKernelCall = 55
+    CXAttrKind_AcquireHandle = 56
+    CXAttrKind_AnyX86NoCfCheck = 57
+    CXAttrKind_CDecl = 58
+    CXAttrKind_CountedBy = 59
+    CXAttrKind_CountedByOrNull = 60
+    CXAttrKind_FastCall = 61
+    CXAttrKind_IntelOclBicc = 62
+    CXAttrKind_LifetimeBound = 63
+    CXAttrKind_LifetimeCaptureBy = 64
+    CXAttrKind_M68kRTD = 65
+    CXAttrKind_MSABI = 66
+    CXAttrKind_NSReturnsRetained = 67
+    CXAttrKind_ObjCOwnership = 68
+    CXAttrKind_Pascal = 69
+    CXAttrKind_Pcs = 70
+    CXAttrKind_PreserveAll = 71
+    CXAttrKind_PreserveMost = 72
+    CXAttrKind_PreserveNone = 73
+    CXAttrKind_RISCVVectorCC = 74
+    CXAttrKind_RegCall = 75
+    CXAttrKind_SizedBy = 76
+    CXAttrKind_SizedByOrNull = 77
+    CXAttrKind_StdCall = 78
+    CXAttrKind_SwiftAsyncCall = 79
+    CXAttrKind_SwiftAttr = 80
+    CXAttrKind_SwiftCall = 81
+    CXAttrKind_SysVABI = 82
+    CXAttrKind_ThisCall = 83
+    CXAttrKind_TypeNullable = 84
+    CXAttrKind_VectorCall = 85
+    CXAttrKind_Annotate = 86
+    CXAttrKind_HLSLParamModifier = 87
+    CXAttrKind_SwiftAsyncContext = 88
+    CXAttrKind_SwiftContext = 89
+    CXAttrKind_SwiftErrorResult = 90
+    CXAttrKind_SwiftIndirectResult = 91
+    CXAttrKind_CFConsumed = 92
+    CXAttrKind_CarriesDependency = 93
+    CXAttrKind_NSConsumed = 94
+    CXAttrKind_NonNull = 95
+    CXAttrKind_OSConsumed = 96
+    CXAttrKind_PassObjectSize = 97
+    CXAttrKind_ReleaseHandle = 98
+    CXAttrKind_UseHandle = 99
+    CXAttrKind_HLSLPackOffset = 100
+    CXAttrKind_HLSLSV_DispatchThreadID = 101
+    CXAttrKind_HLSLSV_GroupID = 102
+    CXAttrKind_HLSLSV_GroupIndex = 103
+    CXAttrKind_HLSLSV_GroupThreadID = 104
+    CXAttrKind_AMDGPUFlatWorkGroupSize = 105
+    CXAttrKind_AMDGPUMaxNumWorkGroups = 106
+    CXAttrKind_AMDGPUNumSGPR = 107
+    CXAttrKind_AMDGPUNumVGPR = 108
+    CXAttrKind_AMDGPUWavesPerEU = 109
+    CXAttrKind_ARMInterrupt = 110
+    CXAttrKind_AVRInterrupt = 111
+    CXAttrKind_AVRSignal = 112
+    CXAttrKind_AcquireCapability = 113
+    CXAttrKind_AcquiredAfter = 114
+    CXAttrKind_AcquiredBefore = 115
+    CXAttrKind_AlignMac68k = 116
+    CXAttrKind_AlignNatural = 117
+    CXAttrKind_Aligned = 118
+    CXAttrKind_AllocAlign = 119
+    CXAttrKind_AllocSize = 120
+    CXAttrKind_AlwaysDestroy = 121
+    CXAttrKind_AnalyzerNoReturn = 122
+    CXAttrKind_AnyX86Interrupt = 123
+    CXAttrKind_AnyX86NoCallerSavedRegisters = 124
+    CXAttrKind_ArcWeakrefUnavailable = 125
+    CXAttrKind_ArgumentWithTypeTag = 126
+    CXAttrKind_ArmBuiltinAlias = 127
+    CXAttrKind_ArmLocallyStreaming = 128
+    CXAttrKind_ArmNew = 129
+    CXAttrKind_Artificial = 130
+    CXAttrKind_AsmLabel = 131
+    CXAttrKind_AssertCapability = 132
+    CXAttrKind_AssertExclusiveLock = 133
+    CXAttrKind_AssertSharedLock = 134
+    CXAttrKind_AssumeAligned = 135
+    CXAttrKind_Availability = 136
+    CXAttrKind_AvailableOnlyInDefaultEvalMethod = 137
+    CXAttrKind_BPFFastCall = 138
+    CXAttrKind_BPFPreserveAccessIndex = 139
+    CXAttrKind_BPFPreserveStaticOffset = 140
+    CXAttrKind_BTFDeclTag = 141
+    CXAttrKind_Blocks = 142
+    CXAttrKind_Builtin = 143
+    CXAttrKind_C11NoReturn = 144
+    CXAttrKind_CFAuditedTransfer = 145
+    CXAttrKind_CFGuard = 146
+    CXAttrKind_CFICanonicalJumpTable = 147
+    CXAttrKind_CFReturnsNotRetained = 148
+    CXAttrKind_CFReturnsRetained = 149
+    CXAttrKind_CFUnknownTransfer = 150
+    CXAttrKind_CPUDispatch = 151
+    CXAttrKind_CPUSpecific = 152
+    CXAttrKind_CUDAConstant = 153
+    CXAttrKind_CUDADevice = 154
+    CXAttrKind_CUDADeviceBuiltinSurfaceType = 155
+    CXAttrKind_CUDADeviceBuiltinTextureType = 156
+    CXAttrKind_CUDAGlobal = 157
+    CXAttrKind_CUDAGridConstant = 158
+    CXAttrKind_CUDAHost = 159
+    CXAttrKind_CUDAInvalidTarget = 160
+    CXAttrKind_CUDALaunchBounds = 161
+    CXAttrKind_CUDAShared = 162
+    CXAttrKind_CXX11NoReturn = 163
+    CXAttrKind_CallableWhen = 164
+    CXAttrKind_Callback = 165
+    CXAttrKind_Capability = 166
+    CXAttrKind_CapturedRecord = 167
+    CXAttrKind_Cleanup = 168
+    CXAttrKind_ClspvLibclcBuiltin = 169
+    CXAttrKind_CmseNSEntry = 170
+    CXAttrKind_CodeModel = 171
+    CXAttrKind_CodeSeg = 172
+    CXAttrKind_Cold = 173
+    CXAttrKind_Common = 174
+    CXAttrKind_Const = 175
+    CXAttrKind_ConstInit = 176
+    CXAttrKind_Constructor = 177
+    CXAttrKind_Consumable = 178
+    CXAttrKind_ConsumableAutoCast = 179
+    CXAttrKind_ConsumableSetOnRead = 180
+    CXAttrKind_Convergent = 181
+    CXAttrKind_CoroAwaitElidable = 182
+    CXAttrKind_CoroAwaitElidableArgument = 183
+    CXAttrKind_CoroDisableLifetimeBound = 184
+    CXAttrKind_CoroLifetimeBound = 185
+    CXAttrKind_CoroOnlyDestroyWhenComplete = 186
+    CXAttrKind_CoroReturnType = 187
+    CXAttrKind_CoroWrapper = 188
+    CXAttrKind_DLLExport = 189
+    CXAttrKind_DLLExportStaticLocal = 190
+    CXAttrKind_DLLImport = 191
+    CXAttrKind_DLLImportStaticLocal = 192
+    CXAttrKind_Deprecated = 193
+    CXAttrKind_Destructor = 194
+    CXAttrKind_DiagnoseAsBuiltin = 195
+    CXAttrKind_DiagnoseIf = 196
+    CXAttrKind_DisableSanitizerInstrumentation = 197
+    CXAttrKind_DisableTailCalls = 198
+    CXAttrKind_EmptyBases = 199
+    CXAttrKind_EnableIf = 200
+    CXAttrKind_EnforceTCB = 201
+    CXAttrKind_EnforceTCBLeaf = 202
+    CXAttrKind_EnumExtensibility = 203
+    CXAttrKind_Error = 204
+    CXAttrKind_ExcludeFromExplicitInstantiation = 205
+    CXAttrKind_ExclusiveTrylockFunction = 206
+    CXAttrKind_ExplicitInit = 207
+    CXAttrKind_ExternalSourceSymbol = 208
+    CXAttrKind_Final = 209
+    CXAttrKind_FlagEnum = 210
+    CXAttrKind_Flatten = 211
+    CXAttrKind_Format = 212
+    CXAttrKind_FormatArg = 213
+    CXAttrKind_FunctionReturnThunks = 214
+    CXAttrKind_GNUInline = 215
+    CXAttrKind_GuardedBy = 216
+    CXAttrKind_GuardedVar = 217
+    CXAttrKind_HIPManaged = 218
+    CXAttrKind_HLSLNumThreads = 219
+    CXAttrKind_HLSLResource = 220
+    CXAttrKind_HLSLResourceBinding = 221
+    CXAttrKind_HLSLShader = 222
+    CXAttrKind_HLSLWaveSize = 223
+    CXAttrKind_Hot = 224
+    CXAttrKind_HybridPatchable = 225
+    CXAttrKind_IBAction = 226
+    CXAttrKind_IBOutlet = 227
+    CXAttrKind_IBOutletCollection = 228
+    CXAttrKind_InitPriority = 229
+    CXAttrKind_InternalLinkage = 230
+    CXAttrKind_LTOVisibilityPublic = 231
+    CXAttrKind_LayoutVersion = 232
+    CXAttrKind_Leaf = 233
+    CXAttrKind_LockReturned = 234
+    CXAttrKind_LocksExcluded = 235
+    CXAttrKind_M68kInterrupt = 236
+    CXAttrKind_MIGServerRoutine = 237
+    CXAttrKind_MSAllocator = 238
+    CXAttrKind_MSConstexpr = 239
+    CXAttrKind_MSInheritance = 240
+    CXAttrKind_MSNoVTable = 241
+    CXAttrKind_MSP430Interrupt = 242
+    CXAttrKind_MSStruct = 243
+    CXAttrKind_MSVtorDisp = 244
+    CXAttrKind_MaxFieldAlignment = 245
+    CXAttrKind_MayAlias = 246
+    CXAttrKind_MaybeUndef = 247
+    CXAttrKind_MicroMips = 248
+    CXAttrKind_MinSize = 249
+    CXAttrKind_MinVectorWidth = 250
+    CXAttrKind_Mips16 = 251
+    CXAttrKind_MipsInterrupt = 252
+    CXAttrKind_MipsLongCall = 253
+    CXAttrKind_MipsShortCall = 254
+    CXAttrKind_NSConsumesSelf = 255
+    CXAttrKind_NSErrorDomain = 256
+    CXAttrKind_NSReturnsAutoreleased = 257
+    CXAttrKind_NSReturnsNotRetained = 258
+    CXAttrKind_NVPTXKernel = 259
+    CXAttrKind_Naked = 260
+    CXAttrKind_NoAlias = 261
+    CXAttrKind_NoCommon = 262
+    CXAttrKind_NoConvergent = 263
+    CXAttrKind_NoDebug = 264
+    CXAttrKind_NoDestroy = 265
+    CXAttrKind_NoDuplicate = 266
+    CXAttrKind_NoInstrumentFunction = 267
+    CXAttrKind_NoMicroMips = 268
+    CXAttrKind_NoMips16 = 269
+    CXAttrKind_NoProfileFunction = 270
+    CXAttrKind_NoRandomizeLayout = 271
+    CXAttrKind_NoReturn = 272
+    CXAttrKind_NoSanitize = 273
+    CXAttrKind_NoSpecializations = 274
+    CXAttrKind_NoSpeculativeLoadHardening = 275
+    CXAttrKind_NoSplitStack = 276
+    CXAttrKind_NoStackProtector = 277
+    CXAttrKind_NoThreadSafetyAnalysis = 278
+    CXAttrKind_NoThrow = 279
+    CXAttrKind_NoTrivialAutoVarInit = 280
+    CXAttrKind_NoUniqueAddress = 281
+    CXAttrKind_NoUwtable = 282
+    CXAttrKind_NotTailCalled = 283
+    CXAttrKind_OMPAllocateDecl = 284
+    CXAttrKind_OMPAssume = 285
+    CXAttrKind_OMPCaptureNoInit = 286
+    CXAttrKind_OMPDeclareTargetDecl = 287
+    CXAttrKind_OMPDeclareVariant = 288
+    CXAttrKind_OMPThreadPrivateDecl = 289
+    CXAttrKind_OSConsumesThis = 290
+    CXAttrKind_OSReturnsNotRetained = 291
+    CXAttrKind_OSReturnsRetained = 292
+    CXAttrKind_OSReturnsRetainedOnNonZero = 293
+    CXAttrKind_OSReturnsRetainedOnZero = 294
+    CXAttrKind_ObjCBridge = 295
+    CXAttrKind_ObjCBridgeMutable = 296
+    CXAttrKind_ObjCBridgeRelated = 297
+    CXAttrKind_ObjCException = 298
+    CXAttrKind_ObjCExplicitProtocolImpl = 299
+    CXAttrKind_ObjCExternallyRetained = 300
+    CXAttrKind_ObjCIndependentClass = 301
+    CXAttrKind_ObjCMethodFamily = 302
+    CXAttrKind_ObjCNSObject = 303
+    CXAttrKind_ObjCPreciseLifetime = 304
+    CXAttrKind_ObjCRequiresPropertyDefs = 305
+    CXAttrKind_ObjCRequiresSuper = 306
+    CXAttrKind_ObjCReturnsInnerPointer = 307
+    CXAttrKind_ObjCRootClass = 308
+    CXAttrKind_ObjCSubclassingRestricted = 309
+    CXAttrKind_OpenCLIntelReqdSubGroupSize = 310
+    CXAttrKind_OpenCLKernel = 311
+    CXAttrKind_OptimizeNone = 312
+    CXAttrKind_Override = 313
+    CXAttrKind_Owner = 314
+    CXAttrKind_Ownership = 315
+    CXAttrKind_Packed = 316
+    CXAttrKind_ParamTypestate = 317
+    CXAttrKind_PatchableFunctionEntry = 318
+    CXAttrKind_Pointer = 319
+    CXAttrKind_PragmaClangBSSSection = 320
+    CXAttrKind_PragmaClangDataSection = 321
+    CXAttrKind_PragmaClangRelroSection = 322
+    CXAttrKind_PragmaClangRodataSection = 323
+    CXAttrKind_PragmaClangTextSection = 324
+    CXAttrKind_PreferredName = 325
+    CXAttrKind_PreferredType = 326
+    CXAttrKind_PtGuardedBy = 327
+    CXAttrKind_PtGuardedVar = 328
+    CXAttrKind_Pure = 329
+    CXAttrKind_RISCVInterrupt = 330
+    CXAttrKind_RandomizeLayout = 331
+    CXAttrKind_ReadOnlyPlacement = 332
+    CXAttrKind_Reinitializes = 333
+    CXAttrKind_ReleaseCapability = 334
+    CXAttrKind_ReqdWorkGroupSize = 335
+    CXAttrKind_RequiresCapability = 336
+    CXAttrKind_Restrict = 337
+    CXAttrKind_Retain = 338
+    CXAttrKind_ReturnTypestate = 339
+    CXAttrKind_ReturnsNonNull = 340
+    CXAttrKind_ReturnsTwice = 341
+    CXAttrKind_SYCLKernel = 342
+    CXAttrKind_SYCLKernelEntryPoint = 343
+    CXAttrKind_SYCLSpecialClass = 344
+    CXAttrKind_ScopedLockable = 345
+    CXAttrKind_Section = 346
+    CXAttrKind_SelectAny = 347
+    CXAttrKind_Sentinel = 348
+    CXAttrKind_SetTypestate = 349
+    CXAttrKind_SharedTrylockFunction = 350
+    CXAttrKind_SpeculativeLoadHardening = 351
+    CXAttrKind_StandaloneDebug = 352
+    CXAttrKind_StrictFP = 353
+    CXAttrKind_StrictGuardStackCheck = 354
+    CXAttrKind_SwiftAsync = 355
+    CXAttrKind_SwiftAsyncError = 356
+    CXAttrKind_SwiftAsyncName = 357
+    CXAttrKind_SwiftBridge = 358
+    CXAttrKind_SwiftBridgedTypedef = 359
+    CXAttrKind_SwiftError = 360
+    CXAttrKind_SwiftImportAsNonGeneric = 361
+    CXAttrKind_SwiftImportPropertyAsAccessors = 362
+    CXAttrKind_SwiftName = 363
+    CXAttrKind_SwiftNewType = 364
+    CXAttrKind_SwiftPrivate = 365
+    CXAttrKind_TLSModel = 366
+    CXAttrKind_Target = 367
+    CXAttrKind_TargetClones = 368
+    CXAttrKind_TargetVersion = 369
+    CXAttrKind_TestTypestate = 370
+    CXAttrKind_TransparentUnion = 371
+    CXAttrKind_TrivialABI = 372
+    CXAttrKind_TryAcquireCapability = 373
+    CXAttrKind_TypeTagForDatatype = 374
+    CXAttrKind_TypeVisibility = 375
+    CXAttrKind_Unavailable = 376
+    CXAttrKind_Uninitialized = 377
+    CXAttrKind_UnsafeBufferUsage = 378
+    CXAttrKind_Unused = 379
+    CXAttrKind_Used = 380
+    CXAttrKind_UsingIfExists = 381
+    CXAttrKind_Uuid = 382
+    CXAttrKind_VTablePointerAuthentication = 383
+    CXAttrKind_VecReturn = 384
+    CXAttrKind_VecTypeHint = 385
+    CXAttrKind_Visibility = 386
+    CXAttrKind_WarnUnused = 387
+    CXAttrKind_WarnUnusedResult = 388
+    CXAttrKind_Weak = 389
+    CXAttrKind_WeakImport = 390
+    CXAttrKind_WeakRef = 391
+    CXAttrKind_WebAssemblyExportName = 392
+    CXAttrKind_WebAssemblyImportModule = 393
+    CXAttrKind_WebAssemblyImportName = 394
+    CXAttrKind_WorkGroupSizeHint = 395
+    CXAttrKind_X86ForceAlignArgPointer = 396
+    CXAttrKind_XRayInstrument = 397
+    CXAttrKind_XRayLogArgs = 398
+    CXAttrKind_ZeroCallUsedRegs = 399
+    CXAttrKind_AbiTag = 400
+    CXAttrKind_Alias = 401
+    CXAttrKind_AlignValue = 402
+    CXAttrKind_BuiltinAlias = 403
+    CXAttrKind_CalledOnce = 404
+    CXAttrKind_IFunc = 405
+    CXAttrKind_InitSeg = 406
+    CXAttrKind_LoaderUninitialized = 407
+    CXAttrKind_LoopHint = 408
+    CXAttrKind_Mode = 409
+    CXAttrKind_NoBuiltin = 410
+    CXAttrKind_NoEscape = 411
+    CXAttrKind_OMPCaptureKind = 412
+    CXAttrKind_OMPDeclareSimdDecl = 413
+    CXAttrKind_OMPReferencedVar = 414
+    CXAttrKind_ObjCBoxable = 415
+    CXAttrKind_ObjCClassStub = 416
+    CXAttrKind_ObjCDesignatedInitializer = 417
+    CXAttrKind_ObjCDirect = 418
+    CXAttrKind_ObjCDirectMembers = 419
+    CXAttrKind_ObjCNonLazyClass = 420
+    CXAttrKind_ObjCNonRuntimeProtocol = 421
+    CXAttrKind_ObjCRuntimeName = 422
+    CXAttrKind_ObjCRuntimeVisible = 423
+    CXAttrKind_OpenCLAccess = 424
+    CXAttrKind_Overloadable = 425
+    CXAttrKind_SwiftObjCMembers = 426
+    CXAttrKind_SwiftVersionedAddition = 427
+    CXAttrKind_SwiftVersionedRemoval = 428
+    CXAttrKind_Thread = 429
     # CXAttrKind_FirstAttr = 0
-    # CXAttrKind_LastAttr = 395
+    # CXAttrKind_LastAttr = 429
     # CXAttrKind_FirstTypeAttr = 0
-    # CXAttrKind_LastTypeAttr = 32
-    # CXAttrKind_FirstStmtAttr = 33
-    # CXAttrKind_LastStmtAttr = 38
-    # CXAttrKind_FirstDeclOrStmtAttr = 39
-    # CXAttrKind_LastDeclOrStmtAttr = 42
-    # CXAttrKind_FirstInheritableAttr = 39
-    # CXAttrKind_LastInheritableAttr = 364
-    # CXAttrKind_FirstDeclOrTypeAttr = 43
-    # CXAttrKind_LastDeclOrTypeAttr = 66
-    # CXAttrKind_FirstInheritableParamAttr = 67
-    # CXAttrKind_LastInheritableParamAttr = 79
-    # CXAttrKind_FirstParameterABIAttr = 67
-    # CXAttrKind_LastParameterABIAttr = 70
-    # CXAttrKind_FirstHLSLAnnotationAttr = 80
-    # CXAttrKind_LastHLSLAnnotationAttr = 81
+    # CXAttrKind_LastTypeAttr = 39
+    # CXAttrKind_FirstStmtAttr = 40
+    # CXAttrKind_LastStmtAttr = 48
+    # CXAttrKind_FirstDeclOrStmtAttr = 49
+    # CXAttrKind_LastDeclOrStmtAttr = 52
+    # CXAttrKind_FirstInheritableAttr = 49
+    # CXAttrKind_LastInheritableAttr = 399
+    # CXAttrKind_FirstDeclOrTypeAttr = 53
+    # CXAttrKind_LastDeclOrTypeAttr = 85
+    # CXAttrKind_FirstInheritableParamAttr = 86
+    # CXAttrKind_LastInheritableParamAttr = 99
+    # CXAttrKind_FirstInheritableParamOrStmtAttr = 86
+    # CXAttrKind_LastInheritableParamOrStmtAttr = 86
+    # CXAttrKind_FirstParameterABIAttr = 87
+    # CXAttrKind_LastParameterABIAttr = 91
+    # CXAttrKind_FirstHLSLAnnotationAttr = 100
+    # CXAttrKind_LastHLSLAnnotationAttr = 104
 end
 
 function clang_Attr_castToAddressSpaceAttr(A)
@@ -5298,12 +5599,28 @@ function clang_Attr_isAddressSpaceAttr(A)
     @ccall libclangex.clang_Attr_isAddressSpaceAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToAllocatingAttr(A)
+    @ccall libclangex.clang_Attr_castToAllocatingAttr(A::CXAttr)::CXAllocatingAttr
+end
+
+function clang_Attr_isAllocatingAttr(A)
+    @ccall libclangex.clang_Attr_isAllocatingAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToAnnotateTypeAttr(A)
     @ccall libclangex.clang_Attr_castToAnnotateTypeAttr(A::CXAttr)::CXAnnotateTypeAttr
 end
 
 function clang_Attr_isAnnotateTypeAttr(A)
     @ccall libclangex.clang_Attr_isAnnotateTypeAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToArmAgnosticAttr(A)
+    @ccall libclangex.clang_Attr_castToArmAgnosticAttr(A::CXAttr)::CXArmAgnosticAttr
+end
+
+function clang_Attr_isArmAgnosticAttr(A)
+    @ccall libclangex.clang_Attr_isArmAgnosticAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToArmInAttr(A)
@@ -5370,12 +5687,28 @@ function clang_Attr_isBTFTypeTagAttr(A)
     @ccall libclangex.clang_Attr_isBTFTypeTagAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToBlockingAttr(A)
+    @ccall libclangex.clang_Attr_castToBlockingAttr(A::CXAttr)::CXBlockingAttr
+end
+
+function clang_Attr_isBlockingAttr(A)
+    @ccall libclangex.clang_Attr_isBlockingAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToCmseNSCallAttr(A)
     @ccall libclangex.clang_Attr_castToCmseNSCallAttr(A::CXAttr)::CXCmseNSCallAttr
 end
 
 function clang_Attr_isCmseNSCallAttr(A)
     @ccall libclangex.clang_Attr_isCmseNSCallAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLContainedTypeAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLContainedTypeAttr(A::CXAttr)::CXHLSLContainedTypeAttr
+end
+
+function clang_Attr_isHLSLContainedTypeAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLContainedTypeAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToHLSLGroupSharedAddressSpaceAttr(A)
@@ -5386,12 +5719,28 @@ function clang_Attr_isHLSLGroupSharedAddressSpaceAttr(A)
     @ccall libclangex.clang_Attr_isHLSLGroupSharedAddressSpaceAttr(A::CXAttr)::Bool
 end
 
-function clang_Attr_castToHLSLParamModifierAttr(A)
-    @ccall libclangex.clang_Attr_castToHLSLParamModifierAttr(A::CXAttr)::CXHLSLParamModifierAttr
+function clang_Attr_castToHLSLROVAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLROVAttr(A::CXAttr)::CXHLSLROVAttr
 end
 
-function clang_Attr_isHLSLParamModifierAttr(A)
-    @ccall libclangex.clang_Attr_isHLSLParamModifierAttr(A::CXAttr)::Bool
+function clang_Attr_isHLSLROVAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLROVAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLRawBufferAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLRawBufferAttr(A::CXAttr)::CXHLSLRawBufferAttr
+end
+
+function clang_Attr_isHLSLRawBufferAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLRawBufferAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLResourceClassAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLResourceClassAttr(A::CXAttr)::CXHLSLResourceClassAttr
+end
+
+function clang_Attr_isHLSLResourceClassAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLResourceClassAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToNoDerefAttr(A)
@@ -5400,6 +5749,22 @@ end
 
 function clang_Attr_isNoDerefAttr(A)
     @ccall libclangex.clang_Attr_isNoDerefAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToNonAllocatingAttr(A)
+    @ccall libclangex.clang_Attr_castToNonAllocatingAttr(A::CXAttr)::CXNonAllocatingAttr
+end
+
+function clang_Attr_isNonAllocatingAttr(A)
+    @ccall libclangex.clang_Attr_isNonAllocatingAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToNonBlockingAttr(A)
+    @ccall libclangex.clang_Attr_castToNonBlockingAttr(A::CXAttr)::CXNonBlockingAttr
+end
+
+function clang_Attr_isNonBlockingAttr(A)
+    @ccall libclangex.clang_Attr_isNonBlockingAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToObjCGCAttr(A)
@@ -5522,14 +5887,6 @@ function clang_Attr_isTypeNullUnspecifiedAttr(A)
     @ccall libclangex.clang_Attr_isTypeNullUnspecifiedAttr(A::CXAttr)::Bool
 end
 
-function clang_Attr_castToTypeNullableAttr(A)
-    @ccall libclangex.clang_Attr_castToTypeNullableAttr(A::CXAttr)::CXTypeNullableAttr
-end
-
-function clang_Attr_isTypeNullableAttr(A)
-    @ccall libclangex.clang_Attr_isTypeNullableAttr(A::CXAttr)::Bool
-end
-
 function clang_Attr_castToTypeNullableResultAttr(A)
     @ccall libclangex.clang_Attr_castToTypeNullableResultAttr(A::CXAttr)::CXTypeNullableResultAttr
 end
@@ -5554,6 +5911,14 @@ function clang_Attr_isWebAssemblyFuncrefAttr(A)
     @ccall libclangex.clang_Attr_isWebAssemblyFuncrefAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToCXXAssumeAttr(A)
+    @ccall libclangex.clang_Attr_castToCXXAssumeAttr(A::CXAttr)::CXCXXAssumeAttr
+end
+
+function clang_Attr_isCXXAssumeAttr(A)
+    @ccall libclangex.clang_Attr_isCXXAssumeAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToCodeAlignAttr(A)
     @ccall libclangex.clang_Attr_castToCodeAlignAttr(A::CXAttr)::CXCodeAlignAttr
 end
@@ -5568,6 +5933,22 @@ end
 
 function clang_Attr_isFallThroughAttr(A)
     @ccall libclangex.clang_Attr_isFallThroughAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLControlFlowHintAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLControlFlowHintAttr(A::CXAttr)::CXHLSLControlFlowHintAttr
+end
+
+function clang_Attr_isHLSLControlFlowHintAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLControlFlowHintAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLLoopHintAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLLoopHintAttr(A::CXAttr)::CXHLSLLoopHintAttr
+end
+
+function clang_Attr_isHLSLLoopHintAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLLoopHintAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToLikelyAttr(A)
@@ -5682,6 +6063,22 @@ function clang_Attr_isCDeclAttr(A)
     @ccall libclangex.clang_Attr_isCDeclAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToCountedByAttr(A)
+    @ccall libclangex.clang_Attr_castToCountedByAttr(A::CXAttr)::CXCountedByAttr
+end
+
+function clang_Attr_isCountedByAttr(A)
+    @ccall libclangex.clang_Attr_isCountedByAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToCountedByOrNullAttr(A)
+    @ccall libclangex.clang_Attr_castToCountedByOrNullAttr(A::CXAttr)::CXCountedByOrNullAttr
+end
+
+function clang_Attr_isCountedByOrNullAttr(A)
+    @ccall libclangex.clang_Attr_isCountedByOrNullAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToFastCallAttr(A)
     @ccall libclangex.clang_Attr_castToFastCallAttr(A::CXAttr)::CXFastCallAttr
 end
@@ -5704,6 +6101,14 @@ end
 
 function clang_Attr_isLifetimeBoundAttr(A)
     @ccall libclangex.clang_Attr_isLifetimeBoundAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToLifetimeCaptureByAttr(A)
+    @ccall libclangex.clang_Attr_castToLifetimeCaptureByAttr(A::CXAttr)::CXLifetimeCaptureByAttr
+end
+
+function clang_Attr_isLifetimeCaptureByAttr(A)
+    @ccall libclangex.clang_Attr_isLifetimeCaptureByAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToM68kRTDAttr(A)
@@ -5770,12 +6175,44 @@ function clang_Attr_isPreserveMostAttr(A)
     @ccall libclangex.clang_Attr_isPreserveMostAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToPreserveNoneAttr(A)
+    @ccall libclangex.clang_Attr_castToPreserveNoneAttr(A::CXAttr)::CXPreserveNoneAttr
+end
+
+function clang_Attr_isPreserveNoneAttr(A)
+    @ccall libclangex.clang_Attr_isPreserveNoneAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToRISCVVectorCCAttr(A)
+    @ccall libclangex.clang_Attr_castToRISCVVectorCCAttr(A::CXAttr)::CXRISCVVectorCCAttr
+end
+
+function clang_Attr_isRISCVVectorCCAttr(A)
+    @ccall libclangex.clang_Attr_isRISCVVectorCCAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToRegCallAttr(A)
     @ccall libclangex.clang_Attr_castToRegCallAttr(A::CXAttr)::CXRegCallAttr
 end
 
 function clang_Attr_isRegCallAttr(A)
     @ccall libclangex.clang_Attr_isRegCallAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToSizedByAttr(A)
+    @ccall libclangex.clang_Attr_castToSizedByAttr(A::CXAttr)::CXSizedByAttr
+end
+
+function clang_Attr_isSizedByAttr(A)
+    @ccall libclangex.clang_Attr_isSizedByAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToSizedByOrNullAttr(A)
+    @ccall libclangex.clang_Attr_castToSizedByOrNullAttr(A::CXAttr)::CXSizedByOrNullAttr
+end
+
+function clang_Attr_isSizedByOrNullAttr(A)
+    @ccall libclangex.clang_Attr_isSizedByOrNullAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToStdCallAttr(A)
@@ -5792,6 +6229,14 @@ end
 
 function clang_Attr_isSwiftAsyncCallAttr(A)
     @ccall libclangex.clang_Attr_isSwiftAsyncCallAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToSwiftAttrAttr(A)
+    @ccall libclangex.clang_Attr_castToSwiftAttrAttr(A::CXAttr)::CXSwiftAttrAttr
+end
+
+function clang_Attr_isSwiftAttrAttr(A)
+    @ccall libclangex.clang_Attr_isSwiftAttrAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToSwiftCallAttr(A)
@@ -5818,12 +6263,36 @@ function clang_Attr_isThisCallAttr(A)
     @ccall libclangex.clang_Attr_isThisCallAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToTypeNullableAttr(A)
+    @ccall libclangex.clang_Attr_castToTypeNullableAttr(A::CXAttr)::CXTypeNullableAttr
+end
+
+function clang_Attr_isTypeNullableAttr(A)
+    @ccall libclangex.clang_Attr_isTypeNullableAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToVectorCallAttr(A)
     @ccall libclangex.clang_Attr_castToVectorCallAttr(A::CXAttr)::CXVectorCallAttr
 end
 
 function clang_Attr_isVectorCallAttr(A)
     @ccall libclangex.clang_Attr_isVectorCallAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToAnnotateAttr(A)
+    @ccall libclangex.clang_Attr_castToAnnotateAttr(A::CXAttr)::CXAnnotateAttr
+end
+
+function clang_Attr_isAnnotateAttr(A)
+    @ccall libclangex.clang_Attr_isAnnotateAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLParamModifierAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLParamModifierAttr(A::CXAttr)::CXHLSLParamModifierAttr
+end
+
+function clang_Attr_isHLSLParamModifierAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLParamModifierAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToSwiftAsyncContextAttr(A)
@@ -5856,14 +6325,6 @@ end
 
 function clang_Attr_isSwiftIndirectResultAttr(A)
     @ccall libclangex.clang_Attr_isSwiftIndirectResultAttr(A::CXAttr)::Bool
-end
-
-function clang_Attr_castToAnnotateAttr(A)
-    @ccall libclangex.clang_Attr_castToAnnotateAttr(A::CXAttr)::CXAnnotateAttr
-end
-
-function clang_Attr_isAnnotateAttr(A)
-    @ccall libclangex.clang_Attr_isAnnotateAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToCFConsumedAttr(A)
@@ -5930,12 +6391,28 @@ function clang_Attr_isUseHandleAttr(A)
     @ccall libclangex.clang_Attr_isUseHandleAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToHLSLPackOffsetAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLPackOffsetAttr(A::CXAttr)::CXHLSLPackOffsetAttr
+end
+
+function clang_Attr_isHLSLPackOffsetAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLPackOffsetAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToHLSLSV_DispatchThreadIDAttr(A)
     @ccall libclangex.clang_Attr_castToHLSLSV_DispatchThreadIDAttr(A::CXAttr)::CXHLSLSV_DispatchThreadIDAttr
 end
 
 function clang_Attr_isHLSLSV_DispatchThreadIDAttr(A)
     @ccall libclangex.clang_Attr_isHLSLSV_DispatchThreadIDAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHLSLSV_GroupIDAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLSV_GroupIDAttr(A::CXAttr)::CXHLSLSV_GroupIDAttr
+end
+
+function clang_Attr_isHLSLSV_GroupIDAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLSV_GroupIDAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToHLSLSV_GroupIndexAttr(A)
@@ -5946,12 +6423,28 @@ function clang_Attr_isHLSLSV_GroupIndexAttr(A)
     @ccall libclangex.clang_Attr_isHLSLSV_GroupIndexAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToHLSLSV_GroupThreadIDAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLSV_GroupThreadIDAttr(A::CXAttr)::CXHLSLSV_GroupThreadIDAttr
+end
+
+function clang_Attr_isHLSLSV_GroupThreadIDAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLSV_GroupThreadIDAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(A)
     @ccall libclangex.clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(A::CXAttr)::CXAMDGPUFlatWorkGroupSizeAttr
 end
 
 function clang_Attr_isAMDGPUFlatWorkGroupSizeAttr(A)
     @ccall libclangex.clang_Attr_isAMDGPUFlatWorkGroupSizeAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToAMDGPUMaxNumWorkGroupsAttr(A)
+    @ccall libclangex.clang_Attr_castToAMDGPUMaxNumWorkGroupsAttr(A::CXAttr)::CXAMDGPUMaxNumWorkGroupsAttr
+end
+
+function clang_Attr_isAMDGPUMaxNumWorkGroupsAttr(A)
+    @ccall libclangex.clang_Attr_isAMDGPUMaxNumWorkGroupsAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToAMDGPUNumSGPRAttr(A)
@@ -6186,14 +6679,6 @@ function clang_Attr_isAssumeAlignedAttr(A)
     @ccall libclangex.clang_Attr_isAssumeAlignedAttr(A::CXAttr)::Bool
 end
 
-function clang_Attr_castToAssumptionAttr(A)
-    @ccall libclangex.clang_Attr_castToAssumptionAttr(A::CXAttr)::CXAssumptionAttr
-end
-
-function clang_Attr_isAssumptionAttr(A)
-    @ccall libclangex.clang_Attr_isAssumptionAttr(A::CXAttr)::Bool
-end
-
 function clang_Attr_castToAvailabilityAttr(A)
     @ccall libclangex.clang_Attr_castToAvailabilityAttr(A::CXAttr)::CXAvailabilityAttr
 end
@@ -6208,6 +6693,14 @@ end
 
 function clang_Attr_isAvailableOnlyInDefaultEvalMethodAttr(A)
     @ccall libclangex.clang_Attr_isAvailableOnlyInDefaultEvalMethodAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToBPFFastCallAttr(A)
+    @ccall libclangex.clang_Attr_castToBPFFastCallAttr(A::CXAttr)::CXBPFFastCallAttr
+end
+
+function clang_Attr_isBPFFastCallAttr(A)
+    @ccall libclangex.clang_Attr_isBPFFastCallAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToBPFPreserveAccessIndexAttr(A)
@@ -6362,6 +6855,14 @@ function clang_Attr_isCUDAGlobalAttr(A)
     @ccall libclangex.clang_Attr_isCUDAGlobalAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToCUDAGridConstantAttr(A)
+    @ccall libclangex.clang_Attr_castToCUDAGridConstantAttr(A::CXAttr)::CXCUDAGridConstantAttr
+end
+
+function clang_Attr_isCUDAGridConstantAttr(A)
+    @ccall libclangex.clang_Attr_isCUDAGridConstantAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToCUDAHostAttr(A)
     @ccall libclangex.clang_Attr_castToCUDAHostAttr(A::CXAttr)::CXCUDAHostAttr
 end
@@ -6440,6 +6941,14 @@ end
 
 function clang_Attr_isCleanupAttr(A)
     @ccall libclangex.clang_Attr_isCleanupAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToClspvLibclcBuiltinAttr(A)
+    @ccall libclangex.clang_Attr_castToClspvLibclcBuiltinAttr(A::CXAttr)::CXClspvLibclcBuiltinAttr
+end
+
+function clang_Attr_isClspvLibclcBuiltinAttr(A)
+    @ccall libclangex.clang_Attr_isClspvLibclcBuiltinAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToCmseNSEntryAttr(A)
@@ -6538,6 +7047,22 @@ function clang_Attr_isConvergentAttr(A)
     @ccall libclangex.clang_Attr_isConvergentAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToCoroAwaitElidableAttr(A)
+    @ccall libclangex.clang_Attr_castToCoroAwaitElidableAttr(A::CXAttr)::CXCoroAwaitElidableAttr
+end
+
+function clang_Attr_isCoroAwaitElidableAttr(A)
+    @ccall libclangex.clang_Attr_isCoroAwaitElidableAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToCoroAwaitElidableArgumentAttr(A)
+    @ccall libclangex.clang_Attr_castToCoroAwaitElidableArgumentAttr(A::CXAttr)::CXCoroAwaitElidableArgumentAttr
+end
+
+function clang_Attr_isCoroAwaitElidableArgumentAttr(A)
+    @ccall libclangex.clang_Attr_isCoroAwaitElidableArgumentAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToCoroDisableLifetimeBoundAttr(A)
     @ccall libclangex.clang_Attr_castToCoroDisableLifetimeBoundAttr(A::CXAttr)::CXCoroDisableLifetimeBoundAttr
 end
@@ -6576,14 +7101,6 @@ end
 
 function clang_Attr_isCoroWrapperAttr(A)
     @ccall libclangex.clang_Attr_isCoroWrapperAttr(A::CXAttr)::Bool
-end
-
-function clang_Attr_castToCountedByAttr(A)
-    @ccall libclangex.clang_Attr_castToCountedByAttr(A::CXAttr)::CXCountedByAttr
-end
-
-function clang_Attr_isCountedByAttr(A)
-    @ccall libclangex.clang_Attr_isCountedByAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToDLLExportAttr(A)
@@ -6730,6 +7247,14 @@ function clang_Attr_isExclusiveTrylockFunctionAttr(A)
     @ccall libclangex.clang_Attr_isExclusiveTrylockFunctionAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToExplicitInitAttr(A)
+    @ccall libclangex.clang_Attr_castToExplicitInitAttr(A::CXAttr)::CXExplicitInitAttr
+end
+
+function clang_Attr_isExplicitInitAttr(A)
+    @ccall libclangex.clang_Attr_isExplicitInitAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToExternalSourceSymbolAttr(A)
     @ccall libclangex.clang_Attr_castToExternalSourceSymbolAttr(A::CXAttr)::CXExternalSourceSymbolAttr
 end
@@ -6850,12 +7375,28 @@ function clang_Attr_isHLSLShaderAttr(A)
     @ccall libclangex.clang_Attr_isHLSLShaderAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToHLSLWaveSizeAttr(A)
+    @ccall libclangex.clang_Attr_castToHLSLWaveSizeAttr(A::CXAttr)::CXHLSLWaveSizeAttr
+end
+
+function clang_Attr_isHLSLWaveSizeAttr(A)
+    @ccall libclangex.clang_Attr_isHLSLWaveSizeAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToHotAttr(A)
     @ccall libclangex.clang_Attr_castToHotAttr(A::CXAttr)::CXHotAttr
 end
 
 function clang_Attr_isHotAttr(A)
     @ccall libclangex.clang_Attr_isHotAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToHybridPatchableAttr(A)
+    @ccall libclangex.clang_Attr_castToHybridPatchableAttr(A::CXAttr)::CXHybridPatchableAttr
+end
+
+function clang_Attr_isHybridPatchableAttr(A)
+    @ccall libclangex.clang_Attr_isHybridPatchableAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToIBActionAttr(A)
@@ -7154,6 +7695,14 @@ function clang_Attr_isNoCommonAttr(A)
     @ccall libclangex.clang_Attr_isNoCommonAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToNoConvergentAttr(A)
+    @ccall libclangex.clang_Attr_castToNoConvergentAttr(A::CXAttr)::CXNoConvergentAttr
+end
+
+function clang_Attr_isNoConvergentAttr(A)
+    @ccall libclangex.clang_Attr_isNoConvergentAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToNoDebugAttr(A)
     @ccall libclangex.clang_Attr_castToNoDebugAttr(A::CXAttr)::CXNoDebugAttr
 end
@@ -7234,6 +7783,14 @@ function clang_Attr_isNoSanitizeAttr(A)
     @ccall libclangex.clang_Attr_isNoSanitizeAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToNoSpecializationsAttr(A)
+    @ccall libclangex.clang_Attr_castToNoSpecializationsAttr(A::CXAttr)::CXNoSpecializationsAttr
+end
+
+function clang_Attr_isNoSpecializationsAttr(A)
+    @ccall libclangex.clang_Attr_isNoSpecializationsAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToNoSpeculativeLoadHardeningAttr(A)
     @ccall libclangex.clang_Attr_castToNoSpeculativeLoadHardeningAttr(A::CXAttr)::CXNoSpeculativeLoadHardeningAttr
 end
@@ -7274,6 +7831,14 @@ function clang_Attr_isNoThrowAttr(A)
     @ccall libclangex.clang_Attr_isNoThrowAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToNoTrivialAutoVarInitAttr(A)
+    @ccall libclangex.clang_Attr_castToNoTrivialAutoVarInitAttr(A::CXAttr)::CXNoTrivialAutoVarInitAttr
+end
+
+function clang_Attr_isNoTrivialAutoVarInitAttr(A)
+    @ccall libclangex.clang_Attr_isNoTrivialAutoVarInitAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToNoUniqueAddressAttr(A)
     @ccall libclangex.clang_Attr_castToNoUniqueAddressAttr(A::CXAttr)::CXNoUniqueAddressAttr
 end
@@ -7304,6 +7869,14 @@ end
 
 function clang_Attr_isOMPAllocateDeclAttr(A)
     @ccall libclangex.clang_Attr_isOMPAllocateDeclAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToOMPAssumeAttr(A)
+    @ccall libclangex.clang_Attr_castToOMPAssumeAttr(A::CXAttr)::CXOMPAssumeAttr
+end
+
+function clang_Attr_isOMPAssumeAttr(A)
+    @ccall libclangex.clang_Attr_isOMPAssumeAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToOMPCaptureNoInitAttr(A)
@@ -7762,6 +8335,14 @@ function clang_Attr_isSYCLKernelAttr(A)
     @ccall libclangex.clang_Attr_isSYCLKernelAttr(A::CXAttr)::Bool
 end
 
+function clang_Attr_castToSYCLKernelEntryPointAttr(A)
+    @ccall libclangex.clang_Attr_castToSYCLKernelEntryPointAttr(A::CXAttr)::CXSYCLKernelEntryPointAttr
+end
+
+function clang_Attr_isSYCLKernelEntryPointAttr(A)
+    @ccall libclangex.clang_Attr_isSYCLKernelEntryPointAttr(A::CXAttr)::Bool
+end
+
 function clang_Attr_castToSYCLSpecialClassAttr(A)
     @ccall libclangex.clang_Attr_castToSYCLSpecialClassAttr(A::CXAttr)::CXSYCLSpecialClassAttr
 end
@@ -7872,14 +8453,6 @@ end
 
 function clang_Attr_isSwiftAsyncNameAttr(A)
     @ccall libclangex.clang_Attr_isSwiftAsyncNameAttr(A::CXAttr)::Bool
-end
-
-function clang_Attr_castToSwiftAttrAttr(A)
-    @ccall libclangex.clang_Attr_castToSwiftAttrAttr(A::CXAttr)::CXSwiftAttrAttr
-end
-
-function clang_Attr_isSwiftAttrAttr(A)
-    @ccall libclangex.clang_Attr_isSwiftAttrAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToSwiftBridgeAttr(A)
@@ -8080,6 +8653,14 @@ end
 
 function clang_Attr_isUuidAttr(A)
     @ccall libclangex.clang_Attr_isUuidAttr(A::CXAttr)::Bool
+end
+
+function clang_Attr_castToVTablePointerAuthenticationAttr(A)
+    @ccall libclangex.clang_Attr_castToVTablePointerAuthenticationAttr(A::CXAttr)::CXVTablePointerAuthenticationAttr
+end
+
+function clang_Attr_isVTablePointerAuthenticationAttr(A)
+    @ccall libclangex.clang_Attr_isVTablePointerAuthenticationAttr(A::CXAttr)::Bool
 end
 
 function clang_Attr_castToVecReturnAttr(A)
@@ -8418,14 +8999,6 @@ function clang_Attr_isOverloadableAttr(A)
     @ccall libclangex.clang_Attr_isOverloadableAttr(A::CXAttr)::Bool
 end
 
-function clang_Attr_castToRenderScriptKernelAttr(A)
-    @ccall libclangex.clang_Attr_castToRenderScriptKernelAttr(A::CXAttr)::CXRenderScriptKernelAttr
-end
-
-function clang_Attr_isRenderScriptKernelAttr(A)
-    @ccall libclangex.clang_Attr_isRenderScriptKernelAttr(A::CXAttr)::Bool
-end
-
 function clang_Attr_castToSwiftObjCMembersAttr(A)
     @ccall libclangex.clang_Attr_castToSwiftObjCMembersAttr(A::CXAttr)::CXSwiftObjCMembersAttr
 end
@@ -8624,58 +9197,62 @@ end
     CXTypeClass_Adjusted = 0
     CXTypeClass_Decayed = 1
     CXTypeClass_ConstantArray = 2
-    CXTypeClass_DependentSizedArray = 3
-    CXTypeClass_IncompleteArray = 4
-    CXTypeClass_VariableArray = 5
-    CXTypeClass_Atomic = 6
-    CXTypeClass_Attributed = 7
-    CXTypeClass_BTFTagAttributed = 8
-    CXTypeClass_BitInt = 9
-    CXTypeClass_BlockPointer = 10
-    CXTypeClass_Builtin = 11
-    CXTypeClass_Complex = 12
-    CXTypeClass_Decltype = 13
-    CXTypeClass_Auto = 14
-    CXTypeClass_DeducedTemplateSpecialization = 15
-    CXTypeClass_DependentAddressSpace = 16
-    CXTypeClass_DependentBitInt = 17
-    CXTypeClass_DependentName = 18
-    CXTypeClass_DependentSizedExtVector = 19
-    CXTypeClass_DependentTemplateSpecialization = 20
-    CXTypeClass_DependentVector = 21
-    CXTypeClass_Elaborated = 22
-    CXTypeClass_FunctionNoProto = 23
-    CXTypeClass_FunctionProto = 24
-    CXTypeClass_InjectedClassName = 25
-    CXTypeClass_MacroQualified = 26
-    CXTypeClass_ConstantMatrix = 27
-    CXTypeClass_DependentSizedMatrix = 28
-    CXTypeClass_MemberPointer = 29
-    CXTypeClass_ObjCObjectPointer = 30
-    CXTypeClass_ObjCObject = 31
-    CXTypeClass_ObjCInterface = 32
-    CXTypeClass_ObjCTypeParam = 33
-    CXTypeClass_PackExpansion = 34
-    CXTypeClass_Paren = 35
-    CXTypeClass_Pipe = 36
-    CXTypeClass_Pointer = 37
-    CXTypeClass_LValueReference = 38
-    CXTypeClass_RValueReference = 39
-    CXTypeClass_SubstTemplateTypeParmPack = 40
-    CXTypeClass_SubstTemplateTypeParm = 41
-    CXTypeClass_Enum = 42
-    CXTypeClass_Record = 43
-    CXTypeClass_TemplateSpecialization = 44
-    CXTypeClass_TemplateTypeParm = 45
-    CXTypeClass_TypeOfExpr = 46
-    CXTypeClass_TypeOf = 47
-    CXTypeClass_Typedef = 48
-    CXTypeClass_UnaryTransform = 49
-    CXTypeClass_UnresolvedUsing = 50
-    CXTypeClass_Using = 51
-    CXTypeClass_Vector = 52
-    CXTypeClass_ExtVector = 53
-    # CXTypeClass_TypeLast = 53
+    CXTypeClass_ArrayParameter = 3
+    CXTypeClass_DependentSizedArray = 4
+    CXTypeClass_IncompleteArray = 5
+    CXTypeClass_VariableArray = 6
+    CXTypeClass_Atomic = 7
+    CXTypeClass_Attributed = 8
+    CXTypeClass_BTFTagAttributed = 9
+    CXTypeClass_BitInt = 10
+    CXTypeClass_BlockPointer = 11
+    CXTypeClass_CountAttributed = 12
+    CXTypeClass_Builtin = 13
+    CXTypeClass_Complex = 14
+    CXTypeClass_Decltype = 15
+    CXTypeClass_Auto = 16
+    CXTypeClass_DeducedTemplateSpecialization = 17
+    CXTypeClass_DependentAddressSpace = 18
+    CXTypeClass_DependentBitInt = 19
+    CXTypeClass_DependentName = 20
+    CXTypeClass_DependentSizedExtVector = 21
+    CXTypeClass_DependentTemplateSpecialization = 22
+    CXTypeClass_DependentVector = 23
+    CXTypeClass_Elaborated = 24
+    CXTypeClass_FunctionNoProto = 25
+    CXTypeClass_FunctionProto = 26
+    CXTypeClass_HLSLAttributedResource = 27
+    CXTypeClass_InjectedClassName = 28
+    CXTypeClass_MacroQualified = 29
+    CXTypeClass_ConstantMatrix = 30
+    CXTypeClass_DependentSizedMatrix = 31
+    CXTypeClass_MemberPointer = 32
+    CXTypeClass_ObjCObjectPointer = 33
+    CXTypeClass_ObjCObject = 34
+    CXTypeClass_ObjCInterface = 35
+    CXTypeClass_ObjCTypeParam = 36
+    CXTypeClass_PackExpansion = 37
+    CXTypeClass_PackIndexing = 38
+    CXTypeClass_Paren = 39
+    CXTypeClass_Pipe = 40
+    CXTypeClass_Pointer = 41
+    CXTypeClass_LValueReference = 42
+    CXTypeClass_RValueReference = 43
+    CXTypeClass_SubstTemplateTypeParmPack = 44
+    CXTypeClass_SubstTemplateTypeParm = 45
+    CXTypeClass_Enum = 46
+    CXTypeClass_Record = 47
+    CXTypeClass_TemplateSpecialization = 48
+    CXTypeClass_TemplateTypeParm = 49
+    CXTypeClass_TypeOfExpr = 50
+    CXTypeClass_TypeOf = 51
+    CXTypeClass_Typedef = 52
+    CXTypeClass_UnaryTransform = 53
+    CXTypeClass_UnresolvedUsing = 54
+    CXTypeClass_Using = 55
+    CXTypeClass_Vector = 56
+    CXTypeClass_ExtVector = 57
+    # CXTypeClass_TypeLast = 57
 end
 
 function clang_Type_castToAdjustedType(T)
@@ -8692,6 +9269,10 @@ end
 
 function clang_Type_castToConstantArrayType(T)
     @ccall libclangex.clang_Type_castToConstantArrayType(T::CXType_)::CXConstantArrayType
+end
+
+function clang_Type_castToArrayParameterType(T)
+    @ccall libclangex.clang_Type_castToArrayParameterType(T::CXType_)::CXArrayParameterType
 end
 
 function clang_Type_castToDependentSizedArrayType(T)
@@ -8724,6 +9305,14 @@ end
 
 function clang_Type_castToBlockPointerType(T)
     @ccall libclangex.clang_Type_castToBlockPointerType(T::CXType_)::CXBlockPointerType
+end
+
+function clang_Type_castToBoundsAttributedType(T)
+    @ccall libclangex.clang_Type_castToBoundsAttributedType(T::CXType_)::CXBoundsAttributedType
+end
+
+function clang_Type_castToCountAttributedType(T)
+    @ccall libclangex.clang_Type_castToCountAttributedType(T::CXType_)::CXCountAttributedType
 end
 
 function clang_Type_castToBuiltinType(T)
@@ -8790,6 +9379,10 @@ function clang_Type_castToFunctionProtoType(T)
     @ccall libclangex.clang_Type_castToFunctionProtoType(T::CXType_)::CXFunctionProtoType
 end
 
+function clang_Type_castToHLSLAttributedResourceType(T)
+    @ccall libclangex.clang_Type_castToHLSLAttributedResourceType(T::CXType_)::CXHLSLAttributedResourceType
+end
+
 function clang_Type_castToInjectedClassNameType(T)
     @ccall libclangex.clang_Type_castToInjectedClassNameType(T::CXType_)::CXInjectedClassNameType
 end
@@ -8832,6 +9425,10 @@ end
 
 function clang_Type_castToPackExpansionType(T)
     @ccall libclangex.clang_Type_castToPackExpansionType(T::CXType_)::CXPackExpansionType
+end
+
+function clang_Type_castToPackIndexingType(T)
+    @ccall libclangex.clang_Type_castToPackIndexingType(T::CXType_)::CXPackIndexingType
 end
 
 function clang_Type_castToParenType(T)
@@ -9164,12 +9761,12 @@ function clang_Qualifiers_addConsistentQualifiers(Quals, Other)
     @ccall libclangex.clang_Qualifiers_addConsistentQualifiers(Quals::Cuint, Other::Cuint)::Cuint
 end
 
-function clang_Qualifiers_isAddressSpaceSupersetOf(A, B)
-    @ccall libclangex.clang_Qualifiers_isAddressSpaceSupersetOf(A::CXLangAS, B::CXLangAS)::Bool
+function clang_Qualifiers_isAddressSpaceSupersetOf(A, B, Ctx)
+    @ccall libclangex.clang_Qualifiers_isAddressSpaceSupersetOf(A::CXLangAS, B::CXLangAS, Ctx::CXASTContext)::Bool
 end
 
-function clang_Qualifiers_compatiblyIncludes(Quals, Other)
-    @ccall libclangex.clang_Qualifiers_compatiblyIncludes(Quals::Cuint, Other::Cuint)::Bool
+function clang_Qualifiers_compatiblyIncludes(Quals, Other, Ctx)
+    @ccall libclangex.clang_Qualifiers_compatiblyIncludes(Quals::Cuint, Other::Cuint, Ctx::CXASTContext)::Bool
 end
 
 function clang_Qualifiers_isStrictSupersetOf(Quals, Other)
@@ -9360,12 +9957,12 @@ function clang_QualType_isDestructedType(OpaquePtr)
     @ccall libclangex.clang_QualType_isDestructedType(OpaquePtr::CXQualType)::CXDestructionKind
 end
 
-function clang_QualType_isMoreQualifiedThan(OpaquePtr, Other)
-    @ccall libclangex.clang_QualType_isMoreQualifiedThan(OpaquePtr::CXQualType, Other::CXQualType)::Bool
+function clang_QualType_isMoreQualifiedThan(OpaquePtr, Other, Ctx)
+    @ccall libclangex.clang_QualType_isMoreQualifiedThan(OpaquePtr::CXQualType, Other::CXQualType, Ctx::CXASTContext)::Bool
 end
 
-function clang_QualType_isAddressSpaceOverlapping(OpaquePtr, Other)
-    @ccall libclangex.clang_QualType_isAddressSpaceOverlapping(OpaquePtr::CXQualType, Other::CXQualType)::Bool
+function clang_QualType_isAddressSpaceOverlapping(OpaquePtr, Other, Ctx)
+    @ccall libclangex.clang_QualType_isAddressSpaceOverlapping(OpaquePtr::CXQualType, Other::CXQualType, Ctx::CXASTContext)::Bool
 end
 
 function clang_QualType_getObjCGCAttr(OpaquePtr)
@@ -9396,8 +9993,8 @@ function clang_QualType_isNonWeakInMRRWithObjCWeak(OpaquePtr, Ctx)
     @ccall libclangex.clang_QualType_isNonWeakInMRRWithObjCWeak(OpaquePtr::CXQualType, Ctx::CXASTContext)::Bool
 end
 
-function clang_QualType_isAtLeastAsQualifiedAs(OpaquePtr, Other)
-    @ccall libclangex.clang_QualType_isAtLeastAsQualifiedAs(OpaquePtr::CXQualType, Other::CXQualType)::Bool
+function clang_QualType_isAtLeastAsQualifiedAs(OpaquePtr, Other, Ctx)
+    @ccall libclangex.clang_QualType_isAtLeastAsQualifiedAs(OpaquePtr::CXQualType, Other::CXQualType, Ctx::CXASTContext)::Bool
 end
 
 function clang_QualType_getNonReferenceType(OpaquePtr)
@@ -9465,10 +10062,6 @@ end
 
 function clang_QualType_isTriviallyRelocatableType(OpaquePtr, Ctx)
     @ccall libclangex.clang_QualType_isTriviallyRelocatableType(OpaquePtr::CXQualType, Ctx::CXASTContext)::Bool
-end
-
-function clang_QualType_isTriviallyEqualityComparableType(OpaquePtr, Ctx)
-    @ccall libclangex.clang_QualType_isTriviallyEqualityComparableType(OpaquePtr::CXQualType, Ctx::CXASTContext)::Bool
 end
 
 function clang_QualType_getAsString(OpaquePtr)
@@ -12203,15 +12796,15 @@ end
 @enum CXLanguage::UInt8 begin
     CXLanguage_Unknown = 0x0000000000000000
     CXLanguage_Asm = 0x0000000000000001
-    CXLanguage_LLVM_IR = 0x0000000000000002
-    CXLanguage_C = 0x0000000000000003
-    CXLanguage_CXX = 0x0000000000000004
-    CXLanguage_ObjC = 0x0000000000000005
-    CXLanguage_ObjCXX = 0x0000000000000006
-    CXLanguage_OpenCL = 0x0000000000000007
-    CXLanguage_OpenCLCXX = 0x0000000000000008
-    CXLanguage_CUDA = 0x0000000000000009
-    CXLanguage_RenderScript = 0x000000000000000a
+    CXLanguage_CIR = 0x0000000000000002
+    CXLanguage_LLVM_IR = 0x0000000000000003
+    CXLanguage_C = 0x0000000000000004
+    CXLanguage_CXX = 0x0000000000000005
+    CXLanguage_ObjC = 0x0000000000000006
+    CXLanguage_ObjCXX = 0x0000000000000007
+    CXLanguage_OpenCL = 0x0000000000000008
+    CXLanguage_OpenCLCXX = 0x0000000000000009
+    CXLanguage_CUDA = 0x000000000000000a
     CXLanguage_HIP = 0x000000000000000b
     CXLanguage_HLSL = 0x000000000000000c
 end
@@ -12228,35 +12821,38 @@ end
     CXLangStandardKind_lang_gnu17 = 8
     CXLangStandardKind_lang_c23 = 9
     CXLangStandardKind_lang_gnu23 = 10
-    CXLangStandardKind_lang_cxx98 = 11
-    CXLangStandardKind_lang_gnucxx98 = 12
-    CXLangStandardKind_lang_cxx11 = 13
-    CXLangStandardKind_lang_gnucxx11 = 14
-    CXLangStandardKind_lang_cxx14 = 15
-    CXLangStandardKind_lang_gnucxx14 = 16
-    CXLangStandardKind_lang_cxx17 = 17
-    CXLangStandardKind_lang_gnucxx17 = 18
-    CXLangStandardKind_lang_cxx20 = 19
-    CXLangStandardKind_lang_gnucxx20 = 20
-    CXLangStandardKind_lang_cxx23 = 21
-    CXLangStandardKind_lang_gnucxx23 = 22
-    CXLangStandardKind_lang_cxx26 = 23
-    CXLangStandardKind_lang_gnucxx26 = 24
-    CXLangStandardKind_lang_opencl10 = 25
-    CXLangStandardKind_lang_opencl11 = 26
-    CXLangStandardKind_lang_opencl12 = 27
-    CXLangStandardKind_lang_opencl20 = 28
-    CXLangStandardKind_lang_opencl30 = 29
-    CXLangStandardKind_lang_openclcpp10 = 30
-    CXLangStandardKind_lang_openclcpp2021 = 31
-    CXLangStandardKind_lang_hlsl = 32
-    CXLangStandardKind_lang_hlsl2015 = 33
-    CXLangStandardKind_lang_hlsl2016 = 34
-    CXLangStandardKind_lang_hlsl2017 = 35
-    CXLangStandardKind_lang_hlsl2018 = 36
-    CXLangStandardKind_lang_hlsl2021 = 37
-    CXLangStandardKind_lang_hlsl202x = 38
-    CXLangStandardKind_lang_unspecified = 39
+    CXLangStandardKind_lang_c2y = 11
+    CXLangStandardKind_lang_gnu2y = 12
+    CXLangStandardKind_lang_cxx98 = 13
+    CXLangStandardKind_lang_gnucxx98 = 14
+    CXLangStandardKind_lang_cxx11 = 15
+    CXLangStandardKind_lang_gnucxx11 = 16
+    CXLangStandardKind_lang_cxx14 = 17
+    CXLangStandardKind_lang_gnucxx14 = 18
+    CXLangStandardKind_lang_cxx17 = 19
+    CXLangStandardKind_lang_gnucxx17 = 20
+    CXLangStandardKind_lang_cxx20 = 21
+    CXLangStandardKind_lang_gnucxx20 = 22
+    CXLangStandardKind_lang_cxx23 = 23
+    CXLangStandardKind_lang_gnucxx23 = 24
+    CXLangStandardKind_lang_cxx26 = 25
+    CXLangStandardKind_lang_gnucxx26 = 26
+    CXLangStandardKind_lang_opencl10 = 27
+    CXLangStandardKind_lang_opencl11 = 28
+    CXLangStandardKind_lang_opencl12 = 29
+    CXLangStandardKind_lang_opencl20 = 30
+    CXLangStandardKind_lang_opencl30 = 31
+    CXLangStandardKind_lang_openclcpp10 = 32
+    CXLangStandardKind_lang_openclcpp2021 = 33
+    CXLangStandardKind_lang_hlsl = 34
+    CXLangStandardKind_lang_hlsl2015 = 35
+    CXLangStandardKind_lang_hlsl2016 = 36
+    CXLangStandardKind_lang_hlsl2017 = 37
+    CXLangStandardKind_lang_hlsl2018 = 38
+    CXLangStandardKind_lang_hlsl2021 = 39
+    CXLangStandardKind_lang_hlsl202x = 40
+    CXLangStandardKind_lang_hlsl202y = 41
+    CXLangStandardKind_lang_unspecified = 42
 end
 
 function clang_LangStandard_getLangKind(Name)
@@ -17152,10 +17748,6 @@ function clang_CXXRecordDecl_removeConversion(CXXRD, Old)
     @ccall libclangex.clang_CXXRecordDecl_removeConversion(CXXRD::CXCXXRecordDecl, Old::CXNamedDecl)::Cvoid
 end
 
-function clang_CXXRecordDecl_markEmpty(CXXRD)
-    @ccall libclangex.clang_CXXRecordDecl_markEmpty(CXXRD::CXCXXRecordDecl)::Cvoid
-end
-
 function clang_CXXRecordDecl_setHasTrivialSpecialMemberForCall(CXXRD)
     @ccall libclangex.clang_CXXRecordDecl_setHasTrivialSpecialMemberForCall(CXXRD::CXCXXRecordDecl)::Cvoid
 end
@@ -18743,15 +19335,16 @@ end
     CXPPKeywordKind_pp_line = 14
     CXPPKeywordKind_pp_error = 15
     CXPPKeywordKind_pp_pragma = 16
-    CXPPKeywordKind_pp_import = 17
-    CXPPKeywordKind_pp_include_next = 18
-    CXPPKeywordKind_pp_warning = 19
-    CXPPKeywordKind_pp_ident = 20
-    CXPPKeywordKind_pp_sccs = 21
-    CXPPKeywordKind_pp_assert = 22
-    CXPPKeywordKind_pp_unassert = 23
-    CXPPKeywordKind_pp___public_macro = 24
-    CXPPKeywordKind_pp___private_macro = 25
+    CXPPKeywordKind_pp_embed = 17
+    CXPPKeywordKind_pp_import = 18
+    CXPPKeywordKind_pp_include_next = 19
+    CXPPKeywordKind_pp_warning = 20
+    CXPPKeywordKind_pp_ident = 21
+    CXPPKeywordKind_pp_sccs = 22
+    CXPPKeywordKind_pp_assert = 23
+    CXPPKeywordKind_pp_unassert = 24
+    CXPPKeywordKind_pp___public_macro = 25
+    CXPPKeywordKind_pp___private_macro = 26
 end
 
 function clang_tok_getTokenName(Kind)
@@ -19189,133 +19782,134 @@ end
 
 @enum CXDeclKind::UInt32 begin
     CXDeclKind_TranslationUnit = 0
-    CXDeclKind_RequiresExprBody = 1
-    CXDeclKind_LinkageSpec = 2
-    CXDeclKind_ExternCContext = 3
-    CXDeclKind_Export = 4
-    CXDeclKind_Captured = 5
-    CXDeclKind_Block = 6
-    CXDeclKind_TopLevelStmt = 7
-    CXDeclKind_StaticAssert = 8
-    CXDeclKind_PragmaDetectMismatch = 9
-    CXDeclKind_PragmaComment = 10
-    CXDeclKind_ObjCPropertyImpl = 11
-    CXDeclKind_OMPThreadPrivate = 12
-    CXDeclKind_OMPRequires = 13
-    CXDeclKind_OMPAllocate = 14
-    CXDeclKind_ObjCMethod = 15
-    CXDeclKind_ObjCProtocol = 16
-    CXDeclKind_ObjCInterface = 17
-    CXDeclKind_ObjCImplementation = 18
-    CXDeclKind_ObjCCategoryImpl = 19
-    # CXDeclKind_firstObjCImpl = 18
-    # CXDeclKind_lastObjCImpl = 19
-    CXDeclKind_ObjCCategory = 20
-    # CXDeclKind_firstObjCContainer = 16
-    # CXDeclKind_lastObjCContainer = 20
-    CXDeclKind_Namespace = 21
-    CXDeclKind_HLSLBuffer = 22
-    CXDeclKind_OMPDeclareReduction = 23
-    CXDeclKind_OMPDeclareMapper = 24
-    CXDeclKind_UnresolvedUsingValue = 25
-    CXDeclKind_UnnamedGlobalConstant = 26
-    CXDeclKind_TemplateParamObject = 27
-    CXDeclKind_MSGuid = 28
-    CXDeclKind_IndirectField = 29
-    CXDeclKind_EnumConstant = 30
-    CXDeclKind_Function = 31
-    CXDeclKind_CXXMethod = 32
-    CXDeclKind_CXXDestructor = 33
-    CXDeclKind_CXXConversion = 34
-    CXDeclKind_CXXConstructor = 35
-    # CXDeclKind_firstCXXMethod = 32
-    # CXDeclKind_lastCXXMethod = 35
-    CXDeclKind_CXXDeductionGuide = 36
-    # CXDeclKind_firstFunction = 31
-    # CXDeclKind_lastFunction = 36
-    CXDeclKind_Var = 37
-    CXDeclKind_VarTemplateSpecialization = 38
-    CXDeclKind_VarTemplatePartialSpecialization = 39
-    # CXDeclKind_firstVarTemplateSpecialization = 38
-    # CXDeclKind_lastVarTemplateSpecialization = 39
-    CXDeclKind_ParmVar = 40
-    CXDeclKind_OMPCapturedExpr = 41
-    CXDeclKind_ImplicitParam = 42
-    CXDeclKind_Decomposition = 43
-    # CXDeclKind_firstVar = 37
-    # CXDeclKind_lastVar = 43
-    CXDeclKind_NonTypeTemplateParm = 44
-    CXDeclKind_MSProperty = 45
-    CXDeclKind_Field = 46
-    CXDeclKind_ObjCIvar = 47
-    CXDeclKind_ObjCAtDefsField = 48
-    # CXDeclKind_firstField = 46
-    # CXDeclKind_lastField = 48
-    # CXDeclKind_firstDeclarator = 31
-    # CXDeclKind_lastDeclarator = 48
-    CXDeclKind_Binding = 49
-    # CXDeclKind_firstValue = 23
-    # CXDeclKind_lastValue = 49
-    CXDeclKind_UsingShadow = 50
-    CXDeclKind_ConstructorUsingShadow = 51
-    # CXDeclKind_firstUsingShadow = 50
-    # CXDeclKind_lastUsingShadow = 51
-    CXDeclKind_UsingPack = 52
-    CXDeclKind_UsingDirective = 53
-    CXDeclKind_UnresolvedUsingIfExists = 54
-    CXDeclKind_Record = 55
-    CXDeclKind_CXXRecord = 56
-    CXDeclKind_ClassTemplateSpecialization = 57
-    CXDeclKind_ClassTemplatePartialSpecialization = 58
-    # CXDeclKind_firstClassTemplateSpecialization = 57
-    # CXDeclKind_lastClassTemplateSpecialization = 58
-    # CXDeclKind_firstCXXRecord = 56
-    # CXDeclKind_lastCXXRecord = 58
-    # CXDeclKind_firstRecord = 55
-    # CXDeclKind_lastRecord = 58
-    CXDeclKind_Enum = 59
-    # CXDeclKind_firstTag = 55
-    # CXDeclKind_lastTag = 59
-    CXDeclKind_UnresolvedUsingTypename = 60
-    CXDeclKind_Typedef = 61
-    CXDeclKind_TypeAlias = 62
-    CXDeclKind_ObjCTypeParam = 63
-    # CXDeclKind_firstTypedefName = 61
-    # CXDeclKind_lastTypedefName = 63
-    CXDeclKind_TemplateTypeParm = 64
-    # CXDeclKind_firstType = 55
-    # CXDeclKind_lastType = 64
-    CXDeclKind_TemplateTemplateParm = 65
-    CXDeclKind_VarTemplate = 66
-    CXDeclKind_TypeAliasTemplate = 67
-    CXDeclKind_FunctionTemplate = 68
-    CXDeclKind_ClassTemplate = 69
-    # CXDeclKind_firstRedeclarableTemplate = 66
-    # CXDeclKind_lastRedeclarableTemplate = 69
-    CXDeclKind_Concept = 70
-    CXDeclKind_BuiltinTemplate = 71
-    # CXDeclKind_firstTemplate = 65
-    # CXDeclKind_lastTemplate = 71
-    CXDeclKind_ObjCProperty = 72
-    CXDeclKind_ObjCCompatibleAlias = 73
-    CXDeclKind_NamespaceAlias = 74
-    CXDeclKind_Label = 75
-    CXDeclKind_UsingEnum = 76
-    CXDeclKind_Using = 77
-    # CXDeclKind_firstBaseUsing = 76
-    # CXDeclKind_lastBaseUsing = 77
-    # CXDeclKind_firstNamed = 15
-    # CXDeclKind_lastNamed = 77
-    CXDeclKind_LifetimeExtendedTemporary = 78
-    CXDeclKind_Import = 79
-    CXDeclKind_ImplicitConceptSpecialization = 80
-    CXDeclKind_FriendTemplate = 81
-    CXDeclKind_Friend = 82
-    CXDeclKind_FileScopeAsm = 83
-    CXDeclKind_Empty = 84
-    CXDeclKind_AccessSpec = 85
+    CXDeclKind_TopLevelStmt = 1
+    CXDeclKind_RequiresExprBody = 2
+    CXDeclKind_OutlinedFunction = 3
+    CXDeclKind_LinkageSpec = 4
+    CXDeclKind_ExternCContext = 5
+    CXDeclKind_Export = 6
+    CXDeclKind_Captured = 7
+    CXDeclKind_Block = 8
+    CXDeclKind_StaticAssert = 9
+    CXDeclKind_PragmaDetectMismatch = 10
+    CXDeclKind_PragmaComment = 11
+    CXDeclKind_ObjCPropertyImpl = 12
+    CXDeclKind_OMPThreadPrivate = 13
+    CXDeclKind_OMPRequires = 14
+    CXDeclKind_OMPAllocate = 15
+    CXDeclKind_ObjCMethod = 16
+    CXDeclKind_ObjCProtocol = 17
+    CXDeclKind_ObjCInterface = 18
+    CXDeclKind_ObjCImplementation = 19
+    CXDeclKind_ObjCCategoryImpl = 20
+    # CXDeclKind_firstObjCImpl = 19
+    # CXDeclKind_lastObjCImpl = 20
+    CXDeclKind_ObjCCategory = 21
+    # CXDeclKind_firstObjCContainer = 17
+    # CXDeclKind_lastObjCContainer = 21
+    CXDeclKind_Namespace = 22
+    CXDeclKind_HLSLBuffer = 23
+    CXDeclKind_OMPDeclareReduction = 24
+    CXDeclKind_OMPDeclareMapper = 25
+    CXDeclKind_UnresolvedUsingValue = 26
+    CXDeclKind_UnnamedGlobalConstant = 27
+    CXDeclKind_TemplateParamObject = 28
+    CXDeclKind_MSGuid = 29
+    CXDeclKind_IndirectField = 30
+    CXDeclKind_EnumConstant = 31
+    CXDeclKind_Function = 32
+    CXDeclKind_CXXMethod = 33
+    CXDeclKind_CXXDestructor = 34
+    CXDeclKind_CXXConversion = 35
+    CXDeclKind_CXXConstructor = 36
+    # CXDeclKind_firstCXXMethod = 33
+    # CXDeclKind_lastCXXMethod = 36
+    CXDeclKind_CXXDeductionGuide = 37
+    # CXDeclKind_firstFunction = 32
+    # CXDeclKind_lastFunction = 37
+    CXDeclKind_Var = 38
+    CXDeclKind_VarTemplateSpecialization = 39
+    CXDeclKind_VarTemplatePartialSpecialization = 40
+    # CXDeclKind_firstVarTemplateSpecialization = 39
+    # CXDeclKind_lastVarTemplateSpecialization = 40
+    CXDeclKind_ParmVar = 41
+    CXDeclKind_OMPCapturedExpr = 42
+    CXDeclKind_ImplicitParam = 43
+    CXDeclKind_Decomposition = 44
+    # CXDeclKind_firstVar = 38
+    # CXDeclKind_lastVar = 44
+    CXDeclKind_NonTypeTemplateParm = 45
+    CXDeclKind_MSProperty = 46
+    CXDeclKind_Field = 47
+    CXDeclKind_ObjCIvar = 48
+    CXDeclKind_ObjCAtDefsField = 49
+    # CXDeclKind_firstField = 47
+    # CXDeclKind_lastField = 49
+    # CXDeclKind_firstDeclarator = 32
+    # CXDeclKind_lastDeclarator = 49
+    CXDeclKind_Binding = 50
+    # CXDeclKind_firstValue = 24
+    # CXDeclKind_lastValue = 50
+    CXDeclKind_UsingShadow = 51
+    CXDeclKind_ConstructorUsingShadow = 52
+    # CXDeclKind_firstUsingShadow = 51
+    # CXDeclKind_lastUsingShadow = 52
+    CXDeclKind_UsingPack = 53
+    CXDeclKind_UsingDirective = 54
+    CXDeclKind_UnresolvedUsingIfExists = 55
+    CXDeclKind_Record = 56
+    CXDeclKind_CXXRecord = 57
+    CXDeclKind_ClassTemplateSpecialization = 58
+    CXDeclKind_ClassTemplatePartialSpecialization = 59
+    # CXDeclKind_firstClassTemplateSpecialization = 58
+    # CXDeclKind_lastClassTemplateSpecialization = 59
+    # CXDeclKind_firstCXXRecord = 57
+    # CXDeclKind_lastCXXRecord = 59
+    # CXDeclKind_firstRecord = 56
+    # CXDeclKind_lastRecord = 59
+    CXDeclKind_Enum = 60
+    # CXDeclKind_firstTag = 56
+    # CXDeclKind_lastTag = 60
+    CXDeclKind_UnresolvedUsingTypename = 61
+    CXDeclKind_Typedef = 62
+    CXDeclKind_TypeAlias = 63
+    CXDeclKind_ObjCTypeParam = 64
+    # CXDeclKind_firstTypedefName = 62
+    # CXDeclKind_lastTypedefName = 64
+    CXDeclKind_TemplateTypeParm = 65
+    # CXDeclKind_firstType = 56
+    # CXDeclKind_lastType = 65
+    CXDeclKind_TemplateTemplateParm = 66
+    CXDeclKind_VarTemplate = 67
+    CXDeclKind_TypeAliasTemplate = 68
+    CXDeclKind_FunctionTemplate = 69
+    CXDeclKind_ClassTemplate = 70
+    # CXDeclKind_firstRedeclarableTemplate = 67
+    # CXDeclKind_lastRedeclarableTemplate = 70
+    CXDeclKind_Concept = 71
+    CXDeclKind_BuiltinTemplate = 72
+    # CXDeclKind_firstTemplate = 66
+    # CXDeclKind_lastTemplate = 72
+    CXDeclKind_ObjCProperty = 73
+    CXDeclKind_ObjCCompatibleAlias = 74
+    CXDeclKind_NamespaceAlias = 75
+    CXDeclKind_Label = 76
+    CXDeclKind_UsingEnum = 77
+    CXDeclKind_Using = 78
+    # CXDeclKind_firstBaseUsing = 77
+    # CXDeclKind_lastBaseUsing = 78
+    # CXDeclKind_firstNamed = 16
+    # CXDeclKind_lastNamed = 78
+    CXDeclKind_LifetimeExtendedTemporary = 79
+    CXDeclKind_Import = 80
+    CXDeclKind_ImplicitConceptSpecialization = 81
+    CXDeclKind_FriendTemplate = 82
+    CXDeclKind_Friend = 83
+    CXDeclKind_FileScopeAsm = 84
+    CXDeclKind_Empty = 85
+    CXDeclKind_AccessSpec = 86
     # CXDeclKind_firstDecl = 0
-    # CXDeclKind_lastDecl = 85
+    # CXDeclKind_lastDecl = 86
 end
 
 @enum CXAvailabilityResult::UInt32 begin
@@ -19364,12 +19958,28 @@ function clang_Decl_isTranslationUnitDecl(D)
     @ccall libclangex.clang_Decl_isTranslationUnitDecl(D::CXDecl)::Bool
 end
 
+function clang_Decl_castToTopLevelStmtDecl(D)
+    @ccall libclangex.clang_Decl_castToTopLevelStmtDecl(D::CXDecl)::CXTopLevelStmtDecl
+end
+
+function clang_Decl_isTopLevelStmtDecl(D)
+    @ccall libclangex.clang_Decl_isTopLevelStmtDecl(D::CXDecl)::Bool
+end
+
 function clang_Decl_castToRequiresExprBodyDecl(D)
     @ccall libclangex.clang_Decl_castToRequiresExprBodyDecl(D::CXDecl)::CXRequiresExprBodyDecl
 end
 
 function clang_Decl_isRequiresExprBodyDecl(D)
     @ccall libclangex.clang_Decl_isRequiresExprBodyDecl(D::CXDecl)::Bool
+end
+
+function clang_Decl_castToOutlinedFunctionDecl(D)
+    @ccall libclangex.clang_Decl_castToOutlinedFunctionDecl(D::CXDecl)::CXOutlinedFunctionDecl
+end
+
+function clang_Decl_isOutlinedFunctionDecl(D)
+    @ccall libclangex.clang_Decl_isOutlinedFunctionDecl(D::CXDecl)::Bool
 end
 
 function clang_Decl_castToLinkageSpecDecl(D)
@@ -19410,14 +20020,6 @@ end
 
 function clang_Decl_isBlockDecl(D)
     @ccall libclangex.clang_Decl_isBlockDecl(D::CXDecl)::Bool
-end
-
-function clang_Decl_castToTopLevelStmtDecl(D)
-    @ccall libclangex.clang_Decl_castToTopLevelStmtDecl(D::CXDecl)::CXTopLevelStmtDecl
-end
-
-function clang_Decl_isTopLevelStmtDecl(D)
-    @ccall libclangex.clang_Decl_isTopLevelStmtDecl(D::CXDecl)::Bool
 end
 
 function clang_Decl_castToStaticAssertDecl(D)
@@ -24120,10 +24722,6 @@ function clang_ClassTemplateSpecializationDecl_getTemplateInstantiationArgs(D)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_getTemplateInstantiationArgs(D::CXClassTemplateSpecializationDecl)::CXTemplateArgumentList
 end
 
-function clang_ClassTemplateSpecializationDecl_getTypeAsWritten(D)
-    @ccall libclangex.clang_ClassTemplateSpecializationDecl_getTypeAsWritten(D::CXClassTemplateSpecializationDecl)::CXTypeSourceInfo
-end
-
 function clang_ClassTemplateSpecializationDecl_getExternLoc(D)
     @ccall libclangex.clang_ClassTemplateSpecializationDecl_getExternLoc(D::CXClassTemplateSpecializationDecl)::CXSourceLocation_
 end
@@ -24142,10 +24740,6 @@ end
 
 function clang_VarTemplateSpecializationDecl_getTemplateInstantiationArgs(D)
     @ccall libclangex.clang_VarTemplateSpecializationDecl_getTemplateInstantiationArgs(D::CXVarTemplateSpecializationDecl)::CXTemplateArgumentList
-end
-
-function clang_VarTemplateSpecializationDecl_getTypeAsWritten(D)
-    @ccall libclangex.clang_VarTemplateSpecializationDecl_getTypeAsWritten(D::CXVarTemplateSpecializationDecl)::CXTypeSourceInfo
 end
 
 function clang_VarTemplateSpecializationDecl_getSourceRange(D)
@@ -24600,10 +25194,6 @@ function clang_BuiltinTemplateDecl_getSourceRange(D)
     @ccall libclangex.clang_BuiltinTemplateDecl_getSourceRange(D::CXBuiltinTemplateDecl)::CXSourceRange_
 end
 
-function clang_ClassTemplateSpecializationDecl_setTypeAsWritten(D, T)
-    @ccall libclangex.clang_ClassTemplateSpecializationDecl_setTypeAsWritten(D::CXClassTemplateSpecializationDecl, T::CXTypeSourceInfo)::Cvoid
-end
-
 function clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(D)
     @ccall libclangex.clang_ClassTemplatePartialSpecializationDecl_getNumAssociatedConstraints(D::CXClassTemplatePartialSpecializationDecl)::Cuint
 end
@@ -24622,10 +25212,6 @@ end
 
 function clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(CTD, D)
     @ccall libclangex.clang_ClassTemplateDecl_findPartialSpecInstantiatedFromMember(CTD::CXClassTemplateDecl, D::CXClassTemplatePartialSpecializationDecl)::CXClassTemplatePartialSpecializationDecl
-end
-
-function clang_VarTemplateSpecializationDecl_setTypeAsWritten(D, T)
-    @ccall libclangex.clang_VarTemplateSpecializationDecl_setTypeAsWritten(D::CXVarTemplateSpecializationDecl, T::CXTypeSourceInfo)::Cvoid
 end
 
 function clang_VarTemplatePartialSpecializationDecl_getNumAssociatedConstraints(D)
@@ -25205,9 +25791,10 @@ end
     CXUnaryExprOrTypeTrait_UETT_DataSizeOf = 1
     CXUnaryExprOrTypeTrait_UETT_AlignOf = 2
     CXUnaryExprOrTypeTrait_UETT_PreferredAlignOf = 3
-    CXUnaryExprOrTypeTrait_UETT_VecStep = 4
-    CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign = 5
-    CXUnaryExprOrTypeTrait_UETT_VectorElements = 6
+    CXUnaryExprOrTypeTrait_UETT_PtrAuthTypeDiscriminator = 4
+    CXUnaryExprOrTypeTrait_UETT_VecStep = 5
+    CXUnaryExprOrTypeTrait_UETT_OpenMPRequiredSimdAlign = 6
+    CXUnaryExprOrTypeTrait_UETT_VectorElements = 7
 end
 
 @enum CXArrayTypeTrait::UInt32 begin
@@ -25224,71 +25811,81 @@ end
     CXTypeTrait_UTT_HasNothrowMoveAssign = 5
     CXTypeTrait_UTT_HasTrivialMoveAssign = 6
     CXTypeTrait_UTT_HasTrivialMoveConstructor = 7
-    CXTypeTrait_UTT_HasNothrowAssign = 8
-    CXTypeTrait_UTT_HasNothrowCopy = 9
-    CXTypeTrait_UTT_HasNothrowConstructor = 10
-    CXTypeTrait_UTT_HasTrivialAssign = 11
-    CXTypeTrait_UTT_HasTrivialCopy = 12
-    CXTypeTrait_UTT_HasTrivialDefaultConstructor = 13
-    CXTypeTrait_UTT_HasTrivialDestructor = 14
-    CXTypeTrait_UTT_HasVirtualDestructor = 15
-    CXTypeTrait_UTT_IsAbstract = 16
-    CXTypeTrait_UTT_IsAggregate = 17
-    CXTypeTrait_UTT_IsClass = 18
-    CXTypeTrait_UTT_IsEmpty = 19
-    CXTypeTrait_UTT_IsEnum = 20
-    CXTypeTrait_UTT_IsFinal = 21
-    CXTypeTrait_UTT_IsLiteral = 22
-    CXTypeTrait_UTT_IsPOD = 23
-    CXTypeTrait_UTT_IsPolymorphic = 24
-    CXTypeTrait_UTT_IsStandardLayout = 25
-    CXTypeTrait_UTT_IsTrivial = 26
-    CXTypeTrait_UTT_IsTriviallyCopyable = 27
-    CXTypeTrait_UTT_IsUnion = 28
-    CXTypeTrait_UTT_HasUniqueObjectRepresentations = 29
-    CXTypeTrait_UTT_IsTriviallyRelocatable = 30
-    CXTypeTrait_UTT_IsTriviallyEqualityComparable = 31
-    CXTypeTrait_UTT_IsBoundedArray = 32
-    CXTypeTrait_UTT_IsUnboundedArray = 33
-    CXTypeTrait_UTT_IsNullPointer = 34
+    CXTypeTrait_UTT_IsImplicitLifetime = 8
+    CXTypeTrait_UTT_HasNothrowAssign = 9
+    CXTypeTrait_UTT_HasNothrowCopy = 10
+    CXTypeTrait_UTT_HasNothrowConstructor = 11
+    CXTypeTrait_UTT_HasTrivialAssign = 12
+    CXTypeTrait_UTT_HasTrivialCopy = 13
+    CXTypeTrait_UTT_HasTrivialDefaultConstructor = 14
+    CXTypeTrait_UTT_HasTrivialDestructor = 15
+    CXTypeTrait_UTT_HasVirtualDestructor = 16
+    CXTypeTrait_UTT_IsAbstract = 17
+    CXTypeTrait_UTT_IsAggregate = 18
+    CXTypeTrait_UTT_IsClass = 19
+    CXTypeTrait_UTT_IsEmpty = 20
+    CXTypeTrait_UTT_IsEnum = 21
+    CXTypeTrait_UTT_IsFinal = 22
+    CXTypeTrait_UTT_IsLiteral = 23
+    CXTypeTrait_UTT_IsPOD = 24
+    CXTypeTrait_UTT_IsPolymorphic = 25
+    CXTypeTrait_UTT_IsStandardLayout = 26
+    CXTypeTrait_UTT_IsTrivial = 27
+    CXTypeTrait_UTT_IsTriviallyCopyable = 28
+    CXTypeTrait_UTT_IsUnion = 29
+    CXTypeTrait_UTT_HasUniqueObjectRepresentations = 30
+    CXTypeTrait_UTT_IsTriviallyRelocatable = 31
+    CXTypeTrait_UTT_IsTriviallyEqualityComparable = 32
+    CXTypeTrait_UTT_IsBoundedArray = 33
+    CXTypeTrait_UTT_IsUnboundedArray = 34
     CXTypeTrait_UTT_IsScopedEnum = 35
     CXTypeTrait_UTT_IsReferenceable = 36
     CXTypeTrait_UTT_CanPassInRegs = 37
-    CXTypeTrait_UTT_IsArithmetic = 38
-    CXTypeTrait_UTT_IsFloatingPoint = 39
-    CXTypeTrait_UTT_IsIntegral = 40
-    CXTypeTrait_UTT_IsCompleteType = 41
-    CXTypeTrait_UTT_IsVoid = 42
-    CXTypeTrait_UTT_IsArray = 43
-    CXTypeTrait_UTT_IsFunction = 44
-    CXTypeTrait_UTT_IsReference = 45
-    CXTypeTrait_UTT_IsLvalueReference = 46
-    CXTypeTrait_UTT_IsRvalueReference = 47
-    CXTypeTrait_UTT_IsFundamental = 48
-    CXTypeTrait_UTT_IsObject = 49
-    CXTypeTrait_UTT_IsScalar = 50
-    CXTypeTrait_UTT_IsCompound = 51
-    CXTypeTrait_UTT_IsPointer = 52
-    CXTypeTrait_UTT_IsMemberObjectPointer = 53
-    CXTypeTrait_UTT_IsMemberFunctionPointer = 54
-    CXTypeTrait_UTT_IsMemberPointer = 55
-    CXTypeTrait_UTT_IsConst = 56
-    CXTypeTrait_UTT_IsVolatile = 57
-    CXTypeTrait_UTT_IsSigned = 58
-    CXTypeTrait_UTT_IsUnsigned = 59
-    CXTypeTrait_BTT_TypeCompatible = 60
-    CXTypeTrait_BTT_IsNothrowAssignable = 61
-    CXTypeTrait_BTT_IsAssignable = 62
-    CXTypeTrait_BTT_IsBaseOf = 63
-    CXTypeTrait_BTT_IsConvertibleTo = 64
-    CXTypeTrait_BTT_IsTriviallyAssignable = 65
-    CXTypeTrait_BTT_ReferenceBindsToTemporary = 66
-    CXTypeTrait_BTT_ReferenceConstructsFromTemporary = 67
-    CXTypeTrait_BTT_IsSame = 68
-    CXTypeTrait_BTT_IsConvertible = 69
-    CXTypeTrait_TT_IsConstructible = 70
-    CXTypeTrait_TT_IsNothrowConstructible = 71
-    CXTypeTrait_TT_IsTriviallyConstructible = 72
+    CXTypeTrait_UTT_IsBitwiseCloneable = 38
+    CXTypeTrait_UTT_IsArithmetic = 39
+    CXTypeTrait_UTT_IsFloatingPoint = 40
+    CXTypeTrait_UTT_IsIntegral = 41
+    CXTypeTrait_UTT_IsCompleteType = 42
+    CXTypeTrait_UTT_IsVoid = 43
+    CXTypeTrait_UTT_IsArray = 44
+    CXTypeTrait_UTT_IsFunction = 45
+    CXTypeTrait_UTT_IsReference = 46
+    CXTypeTrait_UTT_IsLvalueReference = 47
+    CXTypeTrait_UTT_IsRvalueReference = 48
+    CXTypeTrait_UTT_IsFundamental = 49
+    CXTypeTrait_UTT_IsObject = 50
+    CXTypeTrait_UTT_IsScalar = 51
+    CXTypeTrait_UTT_IsCompound = 52
+    CXTypeTrait_UTT_IsPointer = 53
+    CXTypeTrait_UTT_IsMemberObjectPointer = 54
+    CXTypeTrait_UTT_IsMemberFunctionPointer = 55
+    CXTypeTrait_UTT_IsMemberPointer = 56
+    CXTypeTrait_UTT_IsConst = 57
+    CXTypeTrait_UTT_IsVolatile = 58
+    CXTypeTrait_UTT_IsSigned = 59
+    CXTypeTrait_UTT_IsUnsigned = 60
+    CXTypeTrait_UTT_IsIntangibleType = 61
+    CXTypeTrait_UTT_IsTypedResourceElementCompatible = 62
+    CXTypeTrait_BTT_TypeCompatible = 63
+    CXTypeTrait_BTT_IsNothrowAssignable = 64
+    CXTypeTrait_BTT_IsAssignable = 65
+    CXTypeTrait_BTT_IsVirtualBaseOf = 66
+    CXTypeTrait_BTT_IsBaseOf = 67
+    CXTypeTrait_BTT_IsConvertibleTo = 68
+    CXTypeTrait_BTT_IsTriviallyAssignable = 69
+    CXTypeTrait_BTT_IsLayoutCompatible = 70
+    CXTypeTrait_BTT_IsPointerInterconvertibleBaseOf = 71
+    CXTypeTrait_BTT_ReferenceBindsToTemporary = 72
+    CXTypeTrait_BTT_ReferenceConstructsFromTemporary = 73
+    CXTypeTrait_BTT_ReferenceConvertsFromTemporary = 74
+    CXTypeTrait_BTT_IsDeducible = 75
+    CXTypeTrait_BTT_IsSame = 76
+    CXTypeTrait_BTT_IsConvertible = 77
+    CXTypeTrait_BTT_IsNothrowConvertible = 78
+    CXTypeTrait_BTT_IsScalarizedLayoutCompatible = 79
+    CXTypeTrait_TT_IsConstructible = 80
+    CXTypeTrait_TT_IsNothrowConstructible = 81
+    CXTypeTrait_TT_IsTriviallyConstructible = 82
 end
 
 function clang_CXXNamedCastExpr_getCastName(E)
@@ -26953,8 +27550,8 @@ function clang_UnresolvedLookupExpr_Create(Context, NamingClass, QualifierLoc, N
     @ccall libclangex.clang_UnresolvedLookupExpr_Create(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, Overloaded::Bool, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint)::CXUnresolvedLookupExpr
 end
 
-function clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context, NamingClass, QualifierLoc, TemplateKWLoc, NameInfo, RequiresADL, TemplateArgs, Decls, Accesses, NumDecls, KnownDependent)
-    @ccall libclangex.clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, TemplateKWLoc::CXSourceLocation_, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, TemplateArgs::CXTemplateArgumentListInfo, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint, KnownDependent::Bool)::CXUnresolvedLookupExpr
+function clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context, NamingClass, QualifierLoc, TemplateKWLoc, NameInfo, RequiresADL, TemplateArgs, Decls, Accesses, NumDecls, KnownDependent, KnownInstantiationDependent)
+    @ccall libclangex.clang_UnresolvedLookupExpr_CreateWithTemplateArgs(Context::CXASTContext, NamingClass::CXCXXRecordDecl, QualifierLoc::CXNestedNameSpecifierLoc, TemplateKWLoc::CXSourceLocation_, NameInfo::CXDeclarationNameInfo, RequiresADL::Bool, TemplateArgs::CXTemplateArgumentListInfo, Decls::Ptr{CXNamedDecl}, Accesses::Ptr{CXAccessSpecifier}, NumDecls::Cuint, KnownDependent::Bool, KnownInstantiationDependent::Bool)::CXUnresolvedLookupExpr
 end
 
 function clang_UnresolvedMemberExpr_Create(Context, HasUnresolvedUsing, Base, BaseType, IsArrow, OperatorLoc, QualifierLoc, TemplateKWLoc, MemberNameInfo, TemplateArgs, Decls, Accesses, NumDecls)
@@ -28210,10 +28807,6 @@ function clang_TemplateName_getUnderlying(TN)
     @ccall libclangex.clang_TemplateName_getUnderlying(TN::CXTemplateName)::CXTemplateName
 end
 
-function clang_TemplateName_getNameToSubstitute(TN)
-    @ccall libclangex.clang_TemplateName_getNameToSubstitute(TN::CXTemplateName)::CXTemplateName
-end
-
 function clang_TemplateName_getDependence(TN)
     @ccall libclangex.clang_TemplateName_getDependence(TN::CXTemplateName)::Cuint
 end
@@ -28233,7 +28826,6 @@ end
 @enum CXTemplateName_Qualified::UInt32 begin
     CXTemplateName_Qualified_None = 0
     CXTemplateName_Qualified_AsWritten = 1
-    CXTemplateName_Qualified_Fully = 2
 end
 
 function clang_TemplateName_getAsString(TN, Ctx, Qual)
@@ -28336,58 +28928,62 @@ end
     CXTypeLocClass_Adjusted = 0
     CXTypeLocClass_Decayed = 1
     CXTypeLocClass_ConstantArray = 2
-    CXTypeLocClass_DependentSizedArray = 3
-    CXTypeLocClass_IncompleteArray = 4
-    CXTypeLocClass_VariableArray = 5
-    CXTypeLocClass_Atomic = 6
-    CXTypeLocClass_Attributed = 7
-    CXTypeLocClass_BTFTagAttributed = 8
-    CXTypeLocClass_BitInt = 9
-    CXTypeLocClass_BlockPointer = 10
-    CXTypeLocClass_Builtin = 11
-    CXTypeLocClass_Complex = 12
-    CXTypeLocClass_Decltype = 13
-    CXTypeLocClass_Auto = 14
-    CXTypeLocClass_DeducedTemplateSpecialization = 15
-    CXTypeLocClass_DependentAddressSpace = 16
-    CXTypeLocClass_DependentBitInt = 17
-    CXTypeLocClass_DependentName = 18
-    CXTypeLocClass_DependentSizedExtVector = 19
-    CXTypeLocClass_DependentTemplateSpecialization = 20
-    CXTypeLocClass_DependentVector = 21
-    CXTypeLocClass_Elaborated = 22
-    CXTypeLocClass_FunctionNoProto = 23
-    CXTypeLocClass_FunctionProto = 24
-    CXTypeLocClass_InjectedClassName = 25
-    CXTypeLocClass_MacroQualified = 26
-    CXTypeLocClass_ConstantMatrix = 27
-    CXTypeLocClass_DependentSizedMatrix = 28
-    CXTypeLocClass_MemberPointer = 29
-    CXTypeLocClass_ObjCObjectPointer = 30
-    CXTypeLocClass_ObjCObject = 31
-    CXTypeLocClass_ObjCInterface = 32
-    CXTypeLocClass_ObjCTypeParam = 33
-    CXTypeLocClass_PackExpansion = 34
-    CXTypeLocClass_Paren = 35
-    CXTypeLocClass_Pipe = 36
-    CXTypeLocClass_Pointer = 37
-    CXTypeLocClass_LValueReference = 38
-    CXTypeLocClass_RValueReference = 39
-    CXTypeLocClass_SubstTemplateTypeParmPack = 40
-    CXTypeLocClass_SubstTemplateTypeParm = 41
-    CXTypeLocClass_Enum = 42
-    CXTypeLocClass_Record = 43
-    CXTypeLocClass_TemplateSpecialization = 44
-    CXTypeLocClass_TemplateTypeParm = 45
-    CXTypeLocClass_TypeOfExpr = 46
-    CXTypeLocClass_TypeOf = 47
-    CXTypeLocClass_Typedef = 48
-    CXTypeLocClass_UnaryTransform = 49
-    CXTypeLocClass_UnresolvedUsing = 50
-    CXTypeLocClass_Using = 51
-    CXTypeLocClass_Vector = 52
-    CXTypeLocClass_ExtVector = 53
-    CXTypeLocClass_Qualified = 54
+    CXTypeLocClass_ArrayParameter = 3
+    CXTypeLocClass_DependentSizedArray = 4
+    CXTypeLocClass_IncompleteArray = 5
+    CXTypeLocClass_VariableArray = 6
+    CXTypeLocClass_Atomic = 7
+    CXTypeLocClass_Attributed = 8
+    CXTypeLocClass_BTFTagAttributed = 9
+    CXTypeLocClass_BitInt = 10
+    CXTypeLocClass_BlockPointer = 11
+    CXTypeLocClass_CountAttributed = 12
+    CXTypeLocClass_Builtin = 13
+    CXTypeLocClass_Complex = 14
+    CXTypeLocClass_Decltype = 15
+    CXTypeLocClass_Auto = 16
+    CXTypeLocClass_DeducedTemplateSpecialization = 17
+    CXTypeLocClass_DependentAddressSpace = 18
+    CXTypeLocClass_DependentBitInt = 19
+    CXTypeLocClass_DependentName = 20
+    CXTypeLocClass_DependentSizedExtVector = 21
+    CXTypeLocClass_DependentTemplateSpecialization = 22
+    CXTypeLocClass_DependentVector = 23
+    CXTypeLocClass_Elaborated = 24
+    CXTypeLocClass_FunctionNoProto = 25
+    CXTypeLocClass_FunctionProto = 26
+    CXTypeLocClass_HLSLAttributedResource = 27
+    CXTypeLocClass_InjectedClassName = 28
+    CXTypeLocClass_MacroQualified = 29
+    CXTypeLocClass_ConstantMatrix = 30
+    CXTypeLocClass_DependentSizedMatrix = 31
+    CXTypeLocClass_MemberPointer = 32
+    CXTypeLocClass_ObjCObjectPointer = 33
+    CXTypeLocClass_ObjCObject = 34
+    CXTypeLocClass_ObjCInterface = 35
+    CXTypeLocClass_ObjCTypeParam = 36
+    CXTypeLocClass_PackExpansion = 37
+    CXTypeLocClass_PackIndexing = 38
+    CXTypeLocClass_Paren = 39
+    CXTypeLocClass_Pipe = 40
+    CXTypeLocClass_Pointer = 41
+    CXTypeLocClass_LValueReference = 42
+    CXTypeLocClass_RValueReference = 43
+    CXTypeLocClass_SubstTemplateTypeParmPack = 44
+    CXTypeLocClass_SubstTemplateTypeParm = 45
+    CXTypeLocClass_Enum = 46
+    CXTypeLocClass_Record = 47
+    CXTypeLocClass_TemplateSpecialization = 48
+    CXTypeLocClass_TemplateTypeParm = 49
+    CXTypeLocClass_TypeOfExpr = 50
+    CXTypeLocClass_TypeOf = 51
+    CXTypeLocClass_Typedef = 52
+    CXTypeLocClass_UnaryTransform = 53
+    CXTypeLocClass_UnresolvedUsing = 54
+    CXTypeLocClass_Using = 55
+    CXTypeLocClass_Vector = 56
+    CXTypeLocClass_ExtVector = 57
+    CXTypeLocClass_Qualified = 58
 end
 
 function clang_TypeLoc_getTypeLocClass(TL)
@@ -28518,6 +29114,10 @@ function clang_TypeLoc_castToConstantArrayTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToConstantArrayTypeLoc(TL::CXTypeLoc)::CXConstantArrayTypeLoc
 end
 
+function clang_TypeLoc_castToArrayParameterTypeLoc(TL)
+    @ccall libclangex.clang_TypeLoc_castToArrayParameterTypeLoc(TL::CXTypeLoc)::CXArrayParameterTypeLoc
+end
+
 function clang_TypeLoc_castToDependentSizedArrayTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToDependentSizedArrayTypeLoc(TL::CXTypeLoc)::CXDependentSizedArrayTypeLoc
 end
@@ -28548,6 +29148,10 @@ end
 
 function clang_TypeLoc_castToBlockPointerTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToBlockPointerTypeLoc(TL::CXTypeLoc)::CXBlockPointerTypeLoc
+end
+
+function clang_TypeLoc_castToCountAttributedTypeLoc(TL)
+    @ccall libclangex.clang_TypeLoc_castToCountAttributedTypeLoc(TL::CXTypeLoc)::CXCountAttributedTypeLoc
 end
 
 function clang_TypeLoc_castToBuiltinTypeLoc(TL)
@@ -28606,6 +29210,10 @@ function clang_TypeLoc_castToFunctionProtoTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToFunctionProtoTypeLoc(TL::CXTypeLoc)::CXFunctionProtoTypeLoc
 end
 
+function clang_TypeLoc_castToHLSLAttributedResourceTypeLoc(TL)
+    @ccall libclangex.clang_TypeLoc_castToHLSLAttributedResourceTypeLoc(TL::CXTypeLoc)::CXHLSLAttributedResourceTypeLoc
+end
+
 function clang_TypeLoc_castToInjectedClassNameTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToInjectedClassNameTypeLoc(TL::CXTypeLoc)::CXInjectedClassNameTypeLoc
 end
@@ -28644,6 +29252,10 @@ end
 
 function clang_TypeLoc_castToPackExpansionTypeLoc(TL)
     @ccall libclangex.clang_TypeLoc_castToPackExpansionTypeLoc(TL::CXTypeLoc)::CXPackExpansionTypeLoc
+end
+
+function clang_TypeLoc_castToPackIndexingTypeLoc(TL)
+    @ccall libclangex.clang_TypeLoc_castToPackIndexingTypeLoc(TL::CXTypeLoc)::CXPackIndexingTypeLoc
 end
 
 function clang_TypeLoc_castToParenTypeLoc(TL)
@@ -29535,219 +30147,239 @@ end
     CXStmtClass_PredefinedExprClass = 19
     CXStmtClass_ParenListExprClass = 20
     CXStmtClass_ParenExprClass = 21
-    CXStmtClass_PackExpansionExprClass = 22
-    CXStmtClass_UnresolvedMemberExprClass = 23
-    CXStmtClass_UnresolvedLookupExprClass = 24
-    CXStmtClass_OpaqueValueExprClass = 25
-    CXStmtClass_OffsetOfExprClass = 26
-    CXStmtClass_ObjCSubscriptRefExprClass = 27
-    CXStmtClass_ObjCStringLiteralClass = 28
-    CXStmtClass_ObjCSelectorExprClass = 29
-    CXStmtClass_ObjCProtocolExprClass = 30
-    CXStmtClass_ObjCPropertyRefExprClass = 31
-    CXStmtClass_ObjCMessageExprClass = 32
-    CXStmtClass_ObjCIvarRefExprClass = 33
-    CXStmtClass_ObjCIsaExprClass = 34
-    CXStmtClass_ObjCIndirectCopyRestoreExprClass = 35
-    CXStmtClass_ObjCEncodeExprClass = 36
-    CXStmtClass_ObjCDictionaryLiteralClass = 37
-    CXStmtClass_ObjCBoxedExprClass = 38
-    CXStmtClass_ObjCBoolLiteralExprClass = 39
-    CXStmtClass_ObjCAvailabilityCheckExprClass = 40
-    CXStmtClass_ObjCArrayLiteralClass = 41
-    CXStmtClass_OMPIteratorExprClass = 42
-    CXStmtClass_OMPArrayShapingExprClass = 43
-    CXStmtClass_OMPArraySectionExprClass = 44
-    CXStmtClass_NoInitExprClass = 45
-    CXStmtClass_MemberExprClass = 46
-    CXStmtClass_MatrixSubscriptExprClass = 47
-    CXStmtClass_MaterializeTemporaryExprClass = 48
-    CXStmtClass_MSPropertySubscriptExprClass = 49
-    CXStmtClass_MSPropertyRefExprClass = 50
-    CXStmtClass_LambdaExprClass = 51
-    CXStmtClass_IntegerLiteralClass = 52
-    CXStmtClass_InitListExprClass = 53
-    CXStmtClass_ImplicitValueInitExprClass = 54
-    CXStmtClass_ImaginaryLiteralClass = 55
-    CXStmtClass_GenericSelectionExprClass = 56
-    CXStmtClass_GNUNullExprClass = 57
-    CXStmtClass_FunctionParmPackExprClass = 58
-    CXStmtClass_ExprWithCleanupsClass = 59
-    CXStmtClass_ConstantExprClass = 60
-    CXStmtClass_FloatingLiteralClass = 61
-    CXStmtClass_FixedPointLiteralClass = 62
-    CXStmtClass_ExtVectorElementExprClass = 63
-    CXStmtClass_ExpressionTraitExprClass = 64
-    CXStmtClass_DesignatedInitUpdateExprClass = 65
-    CXStmtClass_DesignatedInitExprClass = 66
-    CXStmtClass_DependentScopeDeclRefExprClass = 67
-    CXStmtClass_DependentCoawaitExprClass = 68
-    CXStmtClass_DeclRefExprClass = 69
-    CXStmtClass_CoyieldExprClass = 70
-    CXStmtClass_CoawaitExprClass = 71
-    CXStmtClass_ConvertVectorExprClass = 72
-    CXStmtClass_ConceptSpecializationExprClass = 73
-    CXStmtClass_CompoundLiteralExprClass = 74
-    CXStmtClass_ChooseExprClass = 75
-    CXStmtClass_CharacterLiteralClass = 76
-    CXStmtClass_ImplicitCastExprClass = 77
-    CXStmtClass_ObjCBridgedCastExprClass = 78
-    CXStmtClass_CXXStaticCastExprClass = 79
-    CXStmtClass_CXXReinterpretCastExprClass = 80
-    CXStmtClass_CXXDynamicCastExprClass = 81
-    CXStmtClass_CXXConstCastExprClass = 82
-    CXStmtClass_CXXAddrspaceCastExprClass = 83
-    CXStmtClass_CXXFunctionalCastExprClass = 84
-    CXStmtClass_CStyleCastExprClass = 85
-    CXStmtClass_BuiltinBitCastExprClass = 86
-    CXStmtClass_CallExprClass = 87
-    CXStmtClass_UserDefinedLiteralClass = 88
-    CXStmtClass_CXXOperatorCallExprClass = 89
-    CXStmtClass_CXXMemberCallExprClass = 90
-    CXStmtClass_CUDAKernelCallExprClass = 91
-    CXStmtClass_CXXUuidofExprClass = 92
-    CXStmtClass_CXXUnresolvedConstructExprClass = 93
-    CXStmtClass_CXXTypeidExprClass = 94
-    CXStmtClass_CXXThrowExprClass = 95
-    CXStmtClass_CXXThisExprClass = 96
-    CXStmtClass_CXXStdInitializerListExprClass = 97
-    CXStmtClass_CXXScalarValueInitExprClass = 98
-    CXStmtClass_CXXRewrittenBinaryOperatorClass = 99
-    CXStmtClass_CXXPseudoDestructorExprClass = 100
-    CXStmtClass_CXXParenListInitExprClass = 101
-    CXStmtClass_CXXNullPtrLiteralExprClass = 102
-    CXStmtClass_CXXNoexceptExprClass = 103
-    CXStmtClass_CXXNewExprClass = 104
-    CXStmtClass_CXXInheritedCtorInitExprClass = 105
-    CXStmtClass_CXXFoldExprClass = 106
-    CXStmtClass_CXXDependentScopeMemberExprClass = 107
-    CXStmtClass_CXXDeleteExprClass = 108
-    CXStmtClass_CXXDefaultInitExprClass = 109
-    CXStmtClass_CXXDefaultArgExprClass = 110
-    CXStmtClass_CXXConstructExprClass = 111
-    CXStmtClass_CXXTemporaryObjectExprClass = 112
-    CXStmtClass_CXXBoolLiteralExprClass = 113
-    CXStmtClass_CXXBindTemporaryExprClass = 114
-    CXStmtClass_BlockExprClass = 115
-    CXStmtClass_BinaryOperatorClass = 116
-    CXStmtClass_CompoundAssignOperatorClass = 117
-    CXStmtClass_AtomicExprClass = 118
-    CXStmtClass_AsTypeExprClass = 119
-    CXStmtClass_ArrayTypeTraitExprClass = 120
-    CXStmtClass_ArraySubscriptExprClass = 121
-    CXStmtClass_ArrayInitLoopExprClass = 122
-    CXStmtClass_ArrayInitIndexExprClass = 123
-    CXStmtClass_AddrLabelExprClass = 124
-    CXStmtClass_ConditionalOperatorClass = 125
-    CXStmtClass_BinaryConditionalOperatorClass = 126
-    CXStmtClass_AttributedStmtClass = 127
-    CXStmtClass_SwitchStmtClass = 128
-    CXStmtClass_DefaultStmtClass = 129
-    CXStmtClass_CaseStmtClass = 130
-    CXStmtClass_SEHTryStmtClass = 131
-    CXStmtClass_SEHLeaveStmtClass = 132
-    CXStmtClass_SEHFinallyStmtClass = 133
-    CXStmtClass_SEHExceptStmtClass = 134
-    CXStmtClass_ReturnStmtClass = 135
-    CXStmtClass_ObjCForCollectionStmtClass = 136
-    CXStmtClass_ObjCAutoreleasePoolStmtClass = 137
-    CXStmtClass_ObjCAtTryStmtClass = 138
-    CXStmtClass_ObjCAtThrowStmtClass = 139
-    CXStmtClass_ObjCAtSynchronizedStmtClass = 140
-    CXStmtClass_ObjCAtFinallyStmtClass = 141
-    CXStmtClass_ObjCAtCatchStmtClass = 142
-    CXStmtClass_OMPTeamsDirectiveClass = 143
-    CXStmtClass_OMPTaskyieldDirectiveClass = 144
-    CXStmtClass_OMPTaskwaitDirectiveClass = 145
-    CXStmtClass_OMPTaskgroupDirectiveClass = 146
-    CXStmtClass_OMPTaskDirectiveClass = 147
-    CXStmtClass_OMPTargetUpdateDirectiveClass = 148
-    CXStmtClass_OMPTargetTeamsDirectiveClass = 149
-    CXStmtClass_OMPTargetParallelForDirectiveClass = 150
-    CXStmtClass_OMPTargetParallelDirectiveClass = 151
-    CXStmtClass_OMPTargetExitDataDirectiveClass = 152
-    CXStmtClass_OMPTargetEnterDataDirectiveClass = 153
-    CXStmtClass_OMPTargetDirectiveClass = 154
-    CXStmtClass_OMPTargetDataDirectiveClass = 155
-    CXStmtClass_OMPSingleDirectiveClass = 156
-    CXStmtClass_OMPSectionsDirectiveClass = 157
-    CXStmtClass_OMPSectionDirectiveClass = 158
-    CXStmtClass_OMPScopeDirectiveClass = 159
-    CXStmtClass_OMPScanDirectiveClass = 160
-    CXStmtClass_OMPParallelSectionsDirectiveClass = 161
-    CXStmtClass_OMPParallelMasterDirectiveClass = 162
-    CXStmtClass_OMPParallelMaskedDirectiveClass = 163
-    CXStmtClass_OMPParallelDirectiveClass = 164
-    CXStmtClass_OMPOrderedDirectiveClass = 165
-    CXStmtClass_OMPMetaDirectiveClass = 166
-    CXStmtClass_OMPMasterDirectiveClass = 167
-    CXStmtClass_OMPMaskedDirectiveClass = 168
-    CXStmtClass_OMPUnrollDirectiveClass = 169
-    CXStmtClass_OMPTileDirectiveClass = 170
-    CXStmtClass_OMPTeamsGenericLoopDirectiveClass = 171
-    CXStmtClass_OMPTeamsDistributeSimdDirectiveClass = 172
-    CXStmtClass_OMPTeamsDistributeParallelForSimdDirectiveClass = 173
-    CXStmtClass_OMPTeamsDistributeParallelForDirectiveClass = 174
-    CXStmtClass_OMPTeamsDistributeDirectiveClass = 175
-    CXStmtClass_OMPTaskLoopSimdDirectiveClass = 176
-    CXStmtClass_OMPTaskLoopDirectiveClass = 177
-    CXStmtClass_OMPTargetTeamsGenericLoopDirectiveClass = 178
-    CXStmtClass_OMPTargetTeamsDistributeSimdDirectiveClass = 179
-    CXStmtClass_OMPTargetTeamsDistributeParallelForSimdDirectiveClass = 180
-    CXStmtClass_OMPTargetTeamsDistributeParallelForDirectiveClass = 181
-    CXStmtClass_OMPTargetTeamsDistributeDirectiveClass = 182
-    CXStmtClass_OMPTargetSimdDirectiveClass = 183
-    CXStmtClass_OMPTargetParallelGenericLoopDirectiveClass = 184
-    CXStmtClass_OMPTargetParallelForSimdDirectiveClass = 185
-    CXStmtClass_OMPSimdDirectiveClass = 186
-    CXStmtClass_OMPParallelMasterTaskLoopSimdDirectiveClass = 187
-    CXStmtClass_OMPParallelMasterTaskLoopDirectiveClass = 188
-    CXStmtClass_OMPParallelMaskedTaskLoopSimdDirectiveClass = 189
-    CXStmtClass_OMPParallelMaskedTaskLoopDirectiveClass = 190
-    CXStmtClass_OMPParallelGenericLoopDirectiveClass = 191
-    CXStmtClass_OMPParallelForSimdDirectiveClass = 192
-    CXStmtClass_OMPParallelForDirectiveClass = 193
-    CXStmtClass_OMPMasterTaskLoopSimdDirectiveClass = 194
-    CXStmtClass_OMPMasterTaskLoopDirectiveClass = 195
-    CXStmtClass_OMPMaskedTaskLoopSimdDirectiveClass = 196
-    CXStmtClass_OMPMaskedTaskLoopDirectiveClass = 197
-    CXStmtClass_OMPGenericLoopDirectiveClass = 198
-    CXStmtClass_OMPForSimdDirectiveClass = 199
-    CXStmtClass_OMPForDirectiveClass = 200
-    CXStmtClass_OMPDistributeSimdDirectiveClass = 201
-    CXStmtClass_OMPDistributeParallelForSimdDirectiveClass = 202
-    CXStmtClass_OMPDistributeParallelForDirectiveClass = 203
-    CXStmtClass_OMPDistributeDirectiveClass = 204
-    CXStmtClass_OMPInteropDirectiveClass = 205
-    CXStmtClass_OMPFlushDirectiveClass = 206
-    CXStmtClass_OMPErrorDirectiveClass = 207
-    CXStmtClass_OMPDispatchDirectiveClass = 208
-    CXStmtClass_OMPDepobjDirectiveClass = 209
-    CXStmtClass_OMPCriticalDirectiveClass = 210
-    CXStmtClass_OMPCancellationPointDirectiveClass = 211
-    CXStmtClass_OMPCancelDirectiveClass = 212
-    CXStmtClass_OMPBarrierDirectiveClass = 213
-    CXStmtClass_OMPAtomicDirectiveClass = 214
-    CXStmtClass_OMPCanonicalLoopClass = 215
-    CXStmtClass_NullStmtClass = 216
-    CXStmtClass_MSDependentExistsStmtClass = 217
-    CXStmtClass_IndirectGotoStmtClass = 218
-    CXStmtClass_IfStmtClass = 219
-    CXStmtClass_GotoStmtClass = 220
-    CXStmtClass_ForStmtClass = 221
-    CXStmtClass_DoStmtClass = 222
-    CXStmtClass_DeclStmtClass = 223
-    CXStmtClass_CoroutineBodyStmtClass = 224
-    CXStmtClass_CoreturnStmtClass = 225
-    CXStmtClass_ContinueStmtClass = 226
-    CXStmtClass_CompoundStmtClass = 227
-    CXStmtClass_CapturedStmtClass = 228
-    CXStmtClass_CXXTryStmtClass = 229
-    CXStmtClass_CXXForRangeStmtClass = 230
-    CXStmtClass_CXXCatchStmtClass = 231
-    CXStmtClass_BreakStmtClass = 232
-    CXStmtClass_MSAsmStmtClass = 233
-    CXStmtClass_GCCAsmStmtClass = 234
+    CXStmtClass_PackIndexingExprClass = 22
+    CXStmtClass_PackExpansionExprClass = 23
+    CXStmtClass_UnresolvedMemberExprClass = 24
+    CXStmtClass_UnresolvedLookupExprClass = 25
+    CXStmtClass_OpenACCAsteriskSizeExprClass = 26
+    CXStmtClass_OpaqueValueExprClass = 27
+    CXStmtClass_OffsetOfExprClass = 28
+    CXStmtClass_ObjCSubscriptRefExprClass = 29
+    CXStmtClass_ObjCStringLiteralClass = 30
+    CXStmtClass_ObjCSelectorExprClass = 31
+    CXStmtClass_ObjCProtocolExprClass = 32
+    CXStmtClass_ObjCPropertyRefExprClass = 33
+    CXStmtClass_ObjCMessageExprClass = 34
+    CXStmtClass_ObjCIvarRefExprClass = 35
+    CXStmtClass_ObjCIsaExprClass = 36
+    CXStmtClass_ObjCIndirectCopyRestoreExprClass = 37
+    CXStmtClass_ObjCEncodeExprClass = 38
+    CXStmtClass_ObjCDictionaryLiteralClass = 39
+    CXStmtClass_ObjCBoxedExprClass = 40
+    CXStmtClass_ObjCBoolLiteralExprClass = 41
+    CXStmtClass_ObjCAvailabilityCheckExprClass = 42
+    CXStmtClass_ObjCArrayLiteralClass = 43
+    CXStmtClass_OMPIteratorExprClass = 44
+    CXStmtClass_OMPArrayShapingExprClass = 45
+    CXStmtClass_NoInitExprClass = 46
+    CXStmtClass_MemberExprClass = 47
+    CXStmtClass_MatrixSubscriptExprClass = 48
+    CXStmtClass_MaterializeTemporaryExprClass = 49
+    CXStmtClass_MSPropertySubscriptExprClass = 50
+    CXStmtClass_MSPropertyRefExprClass = 51
+    CXStmtClass_LambdaExprClass = 52
+    CXStmtClass_IntegerLiteralClass = 53
+    CXStmtClass_InitListExprClass = 54
+    CXStmtClass_ImplicitValueInitExprClass = 55
+    CXStmtClass_ImaginaryLiteralClass = 56
+    CXStmtClass_HLSLOutArgExprClass = 57
+    CXStmtClass_GenericSelectionExprClass = 58
+    CXStmtClass_GNUNullExprClass = 59
+    CXStmtClass_FunctionParmPackExprClass = 60
+    CXStmtClass_ExprWithCleanupsClass = 61
+    CXStmtClass_ConstantExprClass = 62
+    CXStmtClass_FloatingLiteralClass = 63
+    CXStmtClass_FixedPointLiteralClass = 64
+    CXStmtClass_ExtVectorElementExprClass = 65
+    CXStmtClass_ExpressionTraitExprClass = 66
+    CXStmtClass_EmbedExprClass = 67
+    CXStmtClass_DesignatedInitUpdateExprClass = 68
+    CXStmtClass_DesignatedInitExprClass = 69
+    CXStmtClass_DependentScopeDeclRefExprClass = 70
+    CXStmtClass_DependentCoawaitExprClass = 71
+    CXStmtClass_DeclRefExprClass = 72
+    CXStmtClass_CoyieldExprClass = 73
+    CXStmtClass_CoawaitExprClass = 74
+    CXStmtClass_ConvertVectorExprClass = 75
+    CXStmtClass_ConceptSpecializationExprClass = 76
+    CXStmtClass_CompoundLiteralExprClass = 77
+    CXStmtClass_ChooseExprClass = 78
+    CXStmtClass_CharacterLiteralClass = 79
+    CXStmtClass_ImplicitCastExprClass = 80
+    CXStmtClass_ObjCBridgedCastExprClass = 81
+    CXStmtClass_CXXStaticCastExprClass = 82
+    CXStmtClass_CXXReinterpretCastExprClass = 83
+    CXStmtClass_CXXDynamicCastExprClass = 84
+    CXStmtClass_CXXConstCastExprClass = 85
+    CXStmtClass_CXXAddrspaceCastExprClass = 86
+    CXStmtClass_CXXFunctionalCastExprClass = 87
+    CXStmtClass_CStyleCastExprClass = 88
+    CXStmtClass_BuiltinBitCastExprClass = 89
+    CXStmtClass_CallExprClass = 90
+    CXStmtClass_UserDefinedLiteralClass = 91
+    CXStmtClass_CXXOperatorCallExprClass = 92
+    CXStmtClass_CXXMemberCallExprClass = 93
+    CXStmtClass_CUDAKernelCallExprClass = 94
+    CXStmtClass_CXXUuidofExprClass = 95
+    CXStmtClass_CXXUnresolvedConstructExprClass = 96
+    CXStmtClass_CXXTypeidExprClass = 97
+    CXStmtClass_CXXThrowExprClass = 98
+    CXStmtClass_CXXThisExprClass = 99
+    CXStmtClass_CXXStdInitializerListExprClass = 100
+    CXStmtClass_CXXScalarValueInitExprClass = 101
+    CXStmtClass_CXXRewrittenBinaryOperatorClass = 102
+    CXStmtClass_CXXPseudoDestructorExprClass = 103
+    CXStmtClass_CXXParenListInitExprClass = 104
+    CXStmtClass_CXXNullPtrLiteralExprClass = 105
+    CXStmtClass_CXXNoexceptExprClass = 106
+    CXStmtClass_CXXNewExprClass = 107
+    CXStmtClass_CXXInheritedCtorInitExprClass = 108
+    CXStmtClass_CXXFoldExprClass = 109
+    CXStmtClass_CXXDependentScopeMemberExprClass = 110
+    CXStmtClass_CXXDeleteExprClass = 111
+    CXStmtClass_CXXDefaultInitExprClass = 112
+    CXStmtClass_CXXDefaultArgExprClass = 113
+    CXStmtClass_CXXConstructExprClass = 114
+    CXStmtClass_CXXTemporaryObjectExprClass = 115
+    CXStmtClass_CXXBoolLiteralExprClass = 116
+    CXStmtClass_CXXBindTemporaryExprClass = 117
+    CXStmtClass_BlockExprClass = 118
+    CXStmtClass_BinaryOperatorClass = 119
+    CXStmtClass_CompoundAssignOperatorClass = 120
+    CXStmtClass_AtomicExprClass = 121
+    CXStmtClass_AsTypeExprClass = 122
+    CXStmtClass_ArrayTypeTraitExprClass = 123
+    CXStmtClass_ArraySubscriptExprClass = 124
+    CXStmtClass_ArraySectionExprClass = 125
+    CXStmtClass_ArrayInitLoopExprClass = 126
+    CXStmtClass_ArrayInitIndexExprClass = 127
+    CXStmtClass_AddrLabelExprClass = 128
+    CXStmtClass_ConditionalOperatorClass = 129
+    CXStmtClass_BinaryConditionalOperatorClass = 130
+    CXStmtClass_AttributedStmtClass = 131
+    CXStmtClass_SwitchStmtClass = 132
+    CXStmtClass_DefaultStmtClass = 133
+    CXStmtClass_CaseStmtClass = 134
+    CXStmtClass_SYCLKernelCallStmtClass = 135
+    CXStmtClass_SEHTryStmtClass = 136
+    CXStmtClass_SEHLeaveStmtClass = 137
+    CXStmtClass_SEHFinallyStmtClass = 138
+    CXStmtClass_SEHExceptStmtClass = 139
+    CXStmtClass_ReturnStmtClass = 140
+    CXStmtClass_OpenACCWaitConstructClass = 141
+    CXStmtClass_OpenACCUpdateConstructClass = 142
+    CXStmtClass_OpenACCShutdownConstructClass = 143
+    CXStmtClass_OpenACCSetConstructClass = 144
+    CXStmtClass_OpenACCInitConstructClass = 145
+    CXStmtClass_OpenACCExitDataConstructClass = 146
+    CXStmtClass_OpenACCEnterDataConstructClass = 147
+    CXStmtClass_OpenACCLoopConstructClass = 148
+    CXStmtClass_OpenACCHostDataConstructClass = 149
+    CXStmtClass_OpenACCDataConstructClass = 150
+    CXStmtClass_OpenACCComputeConstructClass = 151
+    CXStmtClass_OpenACCCombinedConstructClass = 152
+    CXStmtClass_ObjCForCollectionStmtClass = 153
+    CXStmtClass_ObjCAutoreleasePoolStmtClass = 154
+    CXStmtClass_ObjCAtTryStmtClass = 155
+    CXStmtClass_ObjCAtThrowStmtClass = 156
+    CXStmtClass_ObjCAtSynchronizedStmtClass = 157
+    CXStmtClass_ObjCAtFinallyStmtClass = 158
+    CXStmtClass_ObjCAtCatchStmtClass = 159
+    CXStmtClass_OMPTeamsDirectiveClass = 160
+    CXStmtClass_OMPTaskyieldDirectiveClass = 161
+    CXStmtClass_OMPTaskwaitDirectiveClass = 162
+    CXStmtClass_OMPTaskgroupDirectiveClass = 163
+    CXStmtClass_OMPTaskDirectiveClass = 164
+    CXStmtClass_OMPTargetUpdateDirectiveClass = 165
+    CXStmtClass_OMPTargetTeamsDirectiveClass = 166
+    CXStmtClass_OMPTargetParallelForDirectiveClass = 167
+    CXStmtClass_OMPTargetParallelDirectiveClass = 168
+    CXStmtClass_OMPTargetExitDataDirectiveClass = 169
+    CXStmtClass_OMPTargetEnterDataDirectiveClass = 170
+    CXStmtClass_OMPTargetDirectiveClass = 171
+    CXStmtClass_OMPTargetDataDirectiveClass = 172
+    CXStmtClass_OMPSingleDirectiveClass = 173
+    CXStmtClass_OMPSectionsDirectiveClass = 174
+    CXStmtClass_OMPSectionDirectiveClass = 175
+    CXStmtClass_OMPScopeDirectiveClass = 176
+    CXStmtClass_OMPScanDirectiveClass = 177
+    CXStmtClass_OMPParallelSectionsDirectiveClass = 178
+    CXStmtClass_OMPParallelMasterDirectiveClass = 179
+    CXStmtClass_OMPParallelMaskedDirectiveClass = 180
+    CXStmtClass_OMPParallelDirectiveClass = 181
+    CXStmtClass_OMPOrderedDirectiveClass = 182
+    CXStmtClass_OMPMetaDirectiveClass = 183
+    CXStmtClass_OMPMasterDirectiveClass = 184
+    CXStmtClass_OMPMaskedDirectiveClass = 185
+    CXStmtClass_OMPUnrollDirectiveClass = 186
+    CXStmtClass_OMPTileDirectiveClass = 187
+    CXStmtClass_OMPReverseDirectiveClass = 188
+    CXStmtClass_OMPInterchangeDirectiveClass = 189
+    CXStmtClass_OMPTeamsGenericLoopDirectiveClass = 190
+    CXStmtClass_OMPTeamsDistributeSimdDirectiveClass = 191
+    CXStmtClass_OMPTeamsDistributeParallelForSimdDirectiveClass = 192
+    CXStmtClass_OMPTeamsDistributeParallelForDirectiveClass = 193
+    CXStmtClass_OMPTeamsDistributeDirectiveClass = 194
+    CXStmtClass_OMPTaskLoopSimdDirectiveClass = 195
+    CXStmtClass_OMPTaskLoopDirectiveClass = 196
+    CXStmtClass_OMPTargetTeamsGenericLoopDirectiveClass = 197
+    CXStmtClass_OMPTargetTeamsDistributeSimdDirectiveClass = 198
+    CXStmtClass_OMPTargetTeamsDistributeParallelForSimdDirectiveClass = 199
+    CXStmtClass_OMPTargetTeamsDistributeParallelForDirectiveClass = 200
+    CXStmtClass_OMPTargetTeamsDistributeDirectiveClass = 201
+    CXStmtClass_OMPTargetSimdDirectiveClass = 202
+    CXStmtClass_OMPTargetParallelGenericLoopDirectiveClass = 203
+    CXStmtClass_OMPTargetParallelForSimdDirectiveClass = 204
+    CXStmtClass_OMPSimdDirectiveClass = 205
+    CXStmtClass_OMPParallelMasterTaskLoopSimdDirectiveClass = 206
+    CXStmtClass_OMPParallelMasterTaskLoopDirectiveClass = 207
+    CXStmtClass_OMPParallelMaskedTaskLoopSimdDirectiveClass = 208
+    CXStmtClass_OMPParallelMaskedTaskLoopDirectiveClass = 209
+    CXStmtClass_OMPParallelGenericLoopDirectiveClass = 210
+    CXStmtClass_OMPParallelForSimdDirectiveClass = 211
+    CXStmtClass_OMPParallelForDirectiveClass = 212
+    CXStmtClass_OMPMasterTaskLoopSimdDirectiveClass = 213
+    CXStmtClass_OMPMasterTaskLoopDirectiveClass = 214
+    CXStmtClass_OMPMaskedTaskLoopSimdDirectiveClass = 215
+    CXStmtClass_OMPMaskedTaskLoopDirectiveClass = 216
+    CXStmtClass_OMPGenericLoopDirectiveClass = 217
+    CXStmtClass_OMPForSimdDirectiveClass = 218
+    CXStmtClass_OMPForDirectiveClass = 219
+    CXStmtClass_OMPDistributeSimdDirectiveClass = 220
+    CXStmtClass_OMPDistributeParallelForSimdDirectiveClass = 221
+    CXStmtClass_OMPDistributeParallelForDirectiveClass = 222
+    CXStmtClass_OMPDistributeDirectiveClass = 223
+    CXStmtClass_OMPInteropDirectiveClass = 224
+    CXStmtClass_OMPFlushDirectiveClass = 225
+    CXStmtClass_OMPErrorDirectiveClass = 226
+    CXStmtClass_OMPDispatchDirectiveClass = 227
+    CXStmtClass_OMPDepobjDirectiveClass = 228
+    CXStmtClass_OMPCriticalDirectiveClass = 229
+    CXStmtClass_OMPCancellationPointDirectiveClass = 230
+    CXStmtClass_OMPCancelDirectiveClass = 231
+    CXStmtClass_OMPBarrierDirectiveClass = 232
+    CXStmtClass_OMPAtomicDirectiveClass = 233
+    CXStmtClass_OMPAssumeDirectiveClass = 234
+    CXStmtClass_OMPCanonicalLoopClass = 235
+    CXStmtClass_NullStmtClass = 236
+    CXStmtClass_MSDependentExistsStmtClass = 237
+    CXStmtClass_IndirectGotoStmtClass = 238
+    CXStmtClass_IfStmtClass = 239
+    CXStmtClass_GotoStmtClass = 240
+    CXStmtClass_ForStmtClass = 241
+    CXStmtClass_DoStmtClass = 242
+    CXStmtClass_DeclStmtClass = 243
+    CXStmtClass_CoroutineBodyStmtClass = 244
+    CXStmtClass_CoreturnStmtClass = 245
+    CXStmtClass_ContinueStmtClass = 246
+    CXStmtClass_CompoundStmtClass = 247
+    CXStmtClass_CapturedStmtClass = 248
+    CXStmtClass_CXXTryStmtClass = 249
+    CXStmtClass_CXXForRangeStmtClass = 250
+    CXStmtClass_CXXCatchStmtClass = 251
+    CXStmtClass_BreakStmtClass = 252
+    CXStmtClass_MSAsmStmtClass = 253
+    CXStmtClass_GCCAsmStmtClass = 254
 end
 
 function clang_Stmt_castToWhileStmt(S)
@@ -29934,6 +30566,14 @@ function clang_Stmt_isParenExpr(S)
     @ccall libclangex.clang_Stmt_isParenExpr(S::CXStmt)::Bool
 end
 
+function clang_Stmt_castToPackIndexingExpr(S)
+    @ccall libclangex.clang_Stmt_castToPackIndexingExpr(S::CXStmt)::CXPackIndexingExpr
+end
+
+function clang_Stmt_isPackIndexingExpr(S)
+    @ccall libclangex.clang_Stmt_isPackIndexingExpr(S::CXStmt)::Bool
+end
+
 function clang_Stmt_castToPackExpansionExpr(S)
     @ccall libclangex.clang_Stmt_castToPackExpansionExpr(S::CXStmt)::CXPackExpansionExpr
 end
@@ -29964,6 +30604,14 @@ end
 
 function clang_Stmt_isUnresolvedLookupExpr(S)
     @ccall libclangex.clang_Stmt_isUnresolvedLookupExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCAsteriskSizeExpr(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCAsteriskSizeExpr(S::CXStmt)::CXOpenACCAsteriskSizeExpr
+end
+
+function clang_Stmt_isOpenACCAsteriskSizeExpr(S)
+    @ccall libclangex.clang_Stmt_isOpenACCAsteriskSizeExpr(S::CXStmt)::Bool
 end
 
 function clang_Stmt_castToOpaqueValueExpr(S)
@@ -30118,14 +30766,6 @@ function clang_Stmt_isOMPArrayShapingExpr(S)
     @ccall libclangex.clang_Stmt_isOMPArrayShapingExpr(S::CXStmt)::Bool
 end
 
-function clang_Stmt_castToOMPArraySectionExpr(S)
-    @ccall libclangex.clang_Stmt_castToOMPArraySectionExpr(S::CXStmt)::CXOMPArraySectionExpr
-end
-
-function clang_Stmt_isOMPArraySectionExpr(S)
-    @ccall libclangex.clang_Stmt_isOMPArraySectionExpr(S::CXStmt)::Bool
-end
-
 function clang_Stmt_castToNoInitExpr(S)
     @ccall libclangex.clang_Stmt_castToNoInitExpr(S::CXStmt)::CXNoInitExpr
 end
@@ -30214,6 +30854,14 @@ function clang_Stmt_isImaginaryLiteral(S)
     @ccall libclangex.clang_Stmt_isImaginaryLiteral(S::CXStmt)::Bool
 end
 
+function clang_Stmt_castToHLSLOutArgExpr(S)
+    @ccall libclangex.clang_Stmt_castToHLSLOutArgExpr(S::CXStmt)::CXHLSLOutArgExpr
+end
+
+function clang_Stmt_isHLSLOutArgExpr(S)
+    @ccall libclangex.clang_Stmt_isHLSLOutArgExpr(S::CXStmt)::Bool
+end
+
 function clang_Stmt_castToGenericSelectionExpr(S)
     @ccall libclangex.clang_Stmt_castToGenericSelectionExpr(S::CXStmt)::CXGenericSelectionExpr
 end
@@ -30292,6 +30940,14 @@ end
 
 function clang_Stmt_isExpressionTraitExpr(S)
     @ccall libclangex.clang_Stmt_isExpressionTraitExpr(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToEmbedExpr(S)
+    @ccall libclangex.clang_Stmt_castToEmbedExpr(S::CXStmt)::CXEmbedExpr
+end
+
+function clang_Stmt_isEmbedExpr(S)
+    @ccall libclangex.clang_Stmt_isEmbedExpr(S::CXStmt)::Bool
 end
 
 function clang_Stmt_castToDesignatedInitUpdateExpr(S)
@@ -30782,6 +31438,14 @@ function clang_Stmt_isArraySubscriptExpr(S)
     @ccall libclangex.clang_Stmt_isArraySubscriptExpr(S::CXStmt)::Bool
 end
 
+function clang_Stmt_castToArraySectionExpr(S)
+    @ccall libclangex.clang_Stmt_castToArraySectionExpr(S::CXStmt)::CXArraySectionExpr
+end
+
+function clang_Stmt_isArraySectionExpr(S)
+    @ccall libclangex.clang_Stmt_isArraySectionExpr(S::CXStmt)::Bool
+end
+
 function clang_Stmt_castToArrayInitLoopExpr(S)
     @ccall libclangex.clang_Stmt_castToArrayInitLoopExpr(S::CXStmt)::CXArrayInitLoopExpr
 end
@@ -30870,6 +31534,14 @@ function clang_Stmt_isCaseStmt(S)
     @ccall libclangex.clang_Stmt_isCaseStmt(S::CXStmt)::Bool
 end
 
+function clang_Stmt_castToSYCLKernelCallStmt(S)
+    @ccall libclangex.clang_Stmt_castToSYCLKernelCallStmt(S::CXStmt)::CXSYCLKernelCallStmt
+end
+
+function clang_Stmt_isSYCLKernelCallStmt(S)
+    @ccall libclangex.clang_Stmt_isSYCLKernelCallStmt(S::CXStmt)::Bool
+end
+
 function clang_Stmt_castToSEHTryStmt(S)
     @ccall libclangex.clang_Stmt_castToSEHTryStmt(S::CXStmt)::CXSEHTryStmt
 end
@@ -30908,6 +31580,118 @@ end
 
 function clang_Stmt_isReturnStmt(S)
     @ccall libclangex.clang_Stmt_isReturnStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCConstructStmt(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCConstructStmt(S::CXStmt)::CXOpenACCConstructStmt
+end
+
+function clang_Stmt_isOpenACCConstructStmt(S)
+    @ccall libclangex.clang_Stmt_isOpenACCConstructStmt(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCWaitConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCWaitConstruct(S::CXStmt)::CXOpenACCWaitConstruct
+end
+
+function clang_Stmt_isOpenACCWaitConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCWaitConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCUpdateConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCUpdateConstruct(S::CXStmt)::CXOpenACCUpdateConstruct
+end
+
+function clang_Stmt_isOpenACCUpdateConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCUpdateConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCShutdownConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCShutdownConstruct(S::CXStmt)::CXOpenACCShutdownConstruct
+end
+
+function clang_Stmt_isOpenACCShutdownConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCShutdownConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCSetConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCSetConstruct(S::CXStmt)::CXOpenACCSetConstruct
+end
+
+function clang_Stmt_isOpenACCSetConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCSetConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCInitConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCInitConstruct(S::CXStmt)::CXOpenACCInitConstruct
+end
+
+function clang_Stmt_isOpenACCInitConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCInitConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCExitDataConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCExitDataConstruct(S::CXStmt)::CXOpenACCExitDataConstruct
+end
+
+function clang_Stmt_isOpenACCExitDataConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCExitDataConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCEnterDataConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCEnterDataConstruct(S::CXStmt)::CXOpenACCEnterDataConstruct
+end
+
+function clang_Stmt_isOpenACCEnterDataConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCEnterDataConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCAssociatedStmtConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCAssociatedStmtConstruct(S::CXStmt)::CXOpenACCAssociatedStmtConstruct
+end
+
+function clang_Stmt_isOpenACCAssociatedStmtConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCAssociatedStmtConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCLoopConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCLoopConstruct(S::CXStmt)::CXOpenACCLoopConstruct
+end
+
+function clang_Stmt_isOpenACCLoopConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCLoopConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCHostDataConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCHostDataConstruct(S::CXStmt)::CXOpenACCHostDataConstruct
+end
+
+function clang_Stmt_isOpenACCHostDataConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCHostDataConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCDataConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCDataConstruct(S::CXStmt)::CXOpenACCDataConstruct
+end
+
+function clang_Stmt_isOpenACCDataConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCDataConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCComputeConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCComputeConstruct(S::CXStmt)::CXOpenACCComputeConstruct
+end
+
+function clang_Stmt_isOpenACCComputeConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCComputeConstruct(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOpenACCCombinedConstruct(S)
+    @ccall libclangex.clang_Stmt_castToOpenACCCombinedConstruct(S::CXStmt)::CXOpenACCCombinedConstruct
+end
+
+function clang_Stmt_isOpenACCCombinedConstruct(S)
+    @ccall libclangex.clang_Stmt_isOpenACCCombinedConstruct(S::CXStmt)::Bool
 end
 
 function clang_Stmt_castToObjCForCollectionStmt(S)
@@ -31212,6 +31996,22 @@ end
 
 function clang_Stmt_isOMPTileDirective(S)
     @ccall libclangex.clang_Stmt_isOMPTileDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPReverseDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPReverseDirective(S::CXStmt)::CXOMPReverseDirective
+end
+
+function clang_Stmt_isOMPReverseDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPReverseDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPInterchangeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPInterchangeDirective(S::CXStmt)::CXOMPInterchangeDirective
+end
+
+function clang_Stmt_isOMPInterchangeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPInterchangeDirective(S::CXStmt)::Bool
 end
 
 function clang_Stmt_castToOMPLoopDirective(S)
@@ -31572,6 +32372,14 @@ end
 
 function clang_Stmt_isOMPAtomicDirective(S)
     @ccall libclangex.clang_Stmt_isOMPAtomicDirective(S::CXStmt)::Bool
+end
+
+function clang_Stmt_castToOMPAssumeDirective(S)
+    @ccall libclangex.clang_Stmt_castToOMPAssumeDirective(S::CXStmt)::CXOMPAssumeDirective
+end
+
+function clang_Stmt_isOMPAssumeDirective(S)
+    @ccall libclangex.clang_Stmt_isOMPAssumeDirective(S::CXStmt)::Bool
 end
 
 function clang_Stmt_castToOMPCanonicalLoop(S)
@@ -36426,16 +37234,17 @@ end
 
 @enum CXLanguageKind::UInt32 begin
     CXLanguageKind_LK_None = 0
-    CXLanguageKind_LK_Cpp = 1
-    CXLanguageKind_LK_CSharp = 2
-    CXLanguageKind_LK_Java = 3
-    CXLanguageKind_LK_JavaScript = 4
-    CXLanguageKind_LK_Json = 5
-    CXLanguageKind_LK_ObjC = 6
-    CXLanguageKind_LK_Proto = 7
-    CXLanguageKind_LK_TableGen = 8
-    CXLanguageKind_LK_TextProto = 9
-    CXLanguageKind_LK_Verilog = 10
+    CXLanguageKind_LK_C = 1
+    CXLanguageKind_LK_Cpp = 2
+    CXLanguageKind_LK_CSharp = 3
+    CXLanguageKind_LK_Java = 4
+    CXLanguageKind_LK_JavaScript = 5
+    CXLanguageKind_LK_Json = 6
+    CXLanguageKind_LK_ObjC = 7
+    CXLanguageKind_LK_Proto = 8
+    CXLanguageKind_LK_TableGen = 9
+    CXLanguageKind_LK_TextProto = 10
+    CXLanguageKind_LK_Verilog = 11
 end
 
 function clang_FormatStyle_dispose(Style)
@@ -37513,32 +38322,34 @@ end
     CXActionKind_EmitAssembly = 7
     CXActionKind_EmitBC = 8
     CXActionKind_EmitHTML = 9
-    CXActionKind_EmitLLVM = 10
-    CXActionKind_EmitLLVMOnly = 11
-    CXActionKind_EmitCodeGenOnly = 12
-    CXActionKind_EmitObj = 13
-    CXActionKind_ExtractAPI = 14
-    CXActionKind_FixIt = 15
-    CXActionKind_GenerateModule = 16
-    CXActionKind_GenerateModuleInterface = 17
-    CXActionKind_GenerateHeaderUnit = 18
-    CXActionKind_GeneratePCH = 19
-    CXActionKind_GenerateInterfaceStubs = 20
-    CXActionKind_InitOnly = 21
-    CXActionKind_ModuleFileInfo = 22
-    CXActionKind_VerifyPCH = 23
-    CXActionKind_ParseSyntaxOnly = 24
-    CXActionKind_PluginAction = 25
-    CXActionKind_PrintPreamble = 26
-    CXActionKind_PrintPreprocessedInput = 27
-    CXActionKind_RewriteMacros = 28
-    CXActionKind_RewriteObjC = 29
-    CXActionKind_RewriteTest = 30
-    CXActionKind_RunAnalysis = 31
-    CXActionKind_TemplightDump = 32
-    CXActionKind_MigrateSource = 33
-    CXActionKind_RunPreprocessorOnly = 34
-    CXActionKind_PrintDependencyDirectivesSourceMinimizerOutput = 35
+    CXActionKind_EmitCIR = 10
+    CXActionKind_EmitLLVM = 11
+    CXActionKind_EmitLLVMOnly = 12
+    CXActionKind_EmitCodeGenOnly = 13
+    CXActionKind_EmitObj = 14
+    CXActionKind_ExtractAPI = 15
+    CXActionKind_FixIt = 16
+    CXActionKind_GenerateModule = 17
+    CXActionKind_GenerateModuleInterface = 18
+    CXActionKind_GenerateReducedModuleInterface = 19
+    CXActionKind_GenerateHeaderUnit = 20
+    CXActionKind_GeneratePCH = 21
+    CXActionKind_GenerateInterfaceStubs = 22
+    CXActionKind_InitOnly = 23
+    CXActionKind_ModuleFileInfo = 24
+    CXActionKind_VerifyPCH = 25
+    CXActionKind_ParseSyntaxOnly = 26
+    CXActionKind_PluginAction = 27
+    CXActionKind_PrintPreamble = 28
+    CXActionKind_PrintPreprocessedInput = 29
+    CXActionKind_RewriteMacros = 30
+    CXActionKind_RewriteObjC = 31
+    CXActionKind_RewriteTest = 32
+    CXActionKind_RunAnalysis = 33
+    CXActionKind_TemplightDump = 34
+    CXActionKind_MigrateSource = 35
+    CXActionKind_RunPreprocessorOnly = 36
+    CXActionKind_PrintDependencyDirectivesSourceMinimizerOutput = 37
 end
 
 @enum CXInputKind_Format::UInt32 begin
@@ -38224,21 +39035,22 @@ end
     CXValue_Bool = 0
     CXValue_Char_S = 1
     CXValue_SChar = 2
-    CXValue_UChar = 3
-    CXValue_Short = 4
-    CXValue_UShort = 5
-    CXValue_Int = 6
-    CXValue_UInt = 7
-    CXValue_Long = 8
-    CXValue_ULong = 9
-    CXValue_LongLong = 10
-    CXValue_ULongLong = 11
-    CXValue_Float = 12
-    CXValue_Double = 13
-    CXValue_LongDouble = 14
-    CXValue_Void = 15
-    CXValue_PtrOrObj = 16
-    CXValue_Unspecified = 17
+    CXValue_Char_U = 3
+    CXValue_UChar = 4
+    CXValue_Short = 5
+    CXValue_UShort = 6
+    CXValue_Int = 7
+    CXValue_UInt = 8
+    CXValue_Long = 9
+    CXValue_ULong = 10
+    CXValue_LongLong = 11
+    CXValue_ULongLong = 12
+    CXValue_Float = 13
+    CXValue_Double = 14
+    CXValue_LongDouble = 15
+    CXValue_Void = 16
+    CXValue_PtrOrObj = 17
+    CXValue_Unspecified = 18
 end
 
 function clang_Value_getKind(V)
@@ -41706,13 +42518,19 @@ end
 
 @enum CXImplicitConversionRank::UInt32 begin
     CXImplicitConversionRank_ICR_Exact_Match = 0
-    CXImplicitConversionRank_ICR_Promotion = 1
-    CXImplicitConversionRank_ICR_Conversion = 2
-    CXImplicitConversionRank_ICR_OCL_Scalar_Widening = 3
-    CXImplicitConversionRank_ICR_Complex_Real_Conversion = 4
-    CXImplicitConversionRank_ICR_Writeback_Conversion = 5
-    CXImplicitConversionRank_ICR_C_Conversion = 6
-    CXImplicitConversionRank_ICR_C_Conversion_Extension = 7
+    CXImplicitConversionRank_ICR_HLSL_Scalar_Widening = 1
+    CXImplicitConversionRank_ICR_Promotion = 2
+    CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Promotion = 3
+    CXImplicitConversionRank_ICR_Conversion = 4
+    CXImplicitConversionRank_ICR_OCL_Scalar_Widening = 5
+    CXImplicitConversionRank_ICR_HLSL_Scalar_Widening_Conversion = 6
+    CXImplicitConversionRank_ICR_Complex_Real_Conversion = 7
+    CXImplicitConversionRank_ICR_Writeback_Conversion = 8
+    CXImplicitConversionRank_ICR_C_Conversion = 9
+    CXImplicitConversionRank_ICR_C_Conversion_Extension = 10
+    CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction = 11
+    CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Promotion = 12
+    CXImplicitConversionRank_ICR_HLSL_Dimension_Reduction_Conversion = 13
 end
 
 @enum CXNarrowingKind::UInt32 begin
@@ -46718,11 +47536,12 @@ end
     CXCCEKind_CCEK_CaseValue = 0
     CXCCEKind_CCEK_Enumerator = 1
     CXCCEKind_CCEK_TemplateArg = 2
-    CXCCEKind_CCEK_ArrayBound = 3
-    CXCCEKind_CCEK_ExplicitBool = 4
-    CXCCEKind_CCEK_Noexcept = 5
-    CXCCEKind_CCEK_StaticAssertMessageSize = 6
-    CXCCEKind_CCEK_StaticAssertMessageData = 7
+    CXCCEKind_CCEK_InjectedTTP = 3
+    CXCCEKind_CCEK_ArrayBound = 4
+    CXCCEKind_CCEK_ExplicitBool = 5
+    CXCCEKind_CCEK_Noexcept = 6
+    CXCCEKind_CCEK_StaticAssertMessageSize = 7
+    CXCCEKind_CCEK_StaticAssertMessageData = 8
 end
 
 function clang_Sema_BuildFunctionType(S, T, ParamTypes, NumParams, Loc, Entity, IsVariadic, CC)
@@ -47040,7 +47859,8 @@ end
     CXFormatStringType_FST_FreeBSDKPrintf = 6
     CXFormatStringType_FST_OSTrace = 7
     CXFormatStringType_FST_OSLog = 8
-    CXFormatStringType_FST_Unknown = 9
+    CXFormatStringType_FST_Syslog = 9
+    CXFormatStringType_FST_Unknown = 10
 end
 
 function clang_Sema_GetFormatStringType(Format)
@@ -48024,7 +48844,8 @@ end
 @enum CXExpressionKind::UInt32 begin
     CXExpressionKind_EK_Decltype = 0
     CXExpressionKind_EK_TemplateArgument = 1
-    CXExpressionKind_EK_Other = 2
+    CXExpressionKind_EK_AttrArgument = 2
+    CXExpressionKind_EK_Other = 3
 end
 
 function clang_Sema_currentEvaluationContext(S)
@@ -48498,8 +49319,8 @@ function clang_Sema_CheckVectorCompareOperands(S, LHS, RHS, Loc, Opc)
     @ccall libclangex.clang_Sema_CheckVectorCompareOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_, Opc::CXBinaryOperatorKind)::CXQualType
 end
 
-function clang_Sema_CheckVectorLogicalOperands(S, LHS, RHS, Loc)
-    @ccall libclangex.clang_Sema_CheckVectorLogicalOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_)::CXQualType
+function clang_Sema_CheckVectorLogicalOperands(S, LHS, RHS, Loc, Opc)
+    @ccall libclangex.clang_Sema_CheckVectorLogicalOperands(S::CXSema, LHS::Ptr{CXExpr}, RHS::Ptr{CXExpr}, Loc::CXSourceLocation_, Opc::CXBinaryOperatorKind)::CXQualType
 end
 
 function clang_Sema_CreateBuiltin(S, II, Type, ID, Loc)
@@ -48749,8 +49570,8 @@ function clang_Sema_getCurFPFeatures(S)
     @ccall libclangex.clang_Sema_getCurFPFeatures(S::CXSema)::Cuint
 end
 
-function clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S, PParam, AArg, Loc)
-    @ccall libclangex.clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S::CXSema, PParam::CXTemplateParameterList, AArg::CXTemplateDecl, Loc::CXSourceLocation_)::Bool
+function clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S, PParam, PArg, AArg, Loc)
+    @ccall libclangex.clang_Sema_isTemplateTemplateParameterAtLeastAsSpecializedAs(S::CXSema, PParam::CXTemplateParameterList, PArg::CXTemplateDecl, AArg::CXTemplateDecl, Loc::CXSourceLocation_)::Bool
 end
 
 function clang_Sema_getIdentityTemplateArgumentLoc(S, Param, Location)
@@ -49466,7 +50287,9 @@ end
     CXScanningOptimizations_None = 0
     CXScanningOptimizations_HeaderSearch = 1
     CXScanningOptimizations_SystemWarnings = 2
-    CXScanningOptimizations_All = 3
+    CXScanningOptimizations_VFS = 4
+    CXScanningOptimizations_Macros = 8
+    CXScanningOptimizations_All = 15
 end
 
 function clang_DependencyScanningService_create(Mode, Format, OptimizeArgs, EagerLoadModules)

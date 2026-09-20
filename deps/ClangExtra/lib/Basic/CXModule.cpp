@@ -3,18 +3,39 @@
 #include "clang/Basic/Module.h"
 #include "clang/Basic/LangOptions.h"
 #include "clang/Basic/TargetInfo.h"
+#include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/raw_ostream.h"
+
+#include <memory>
 
 CXModule_ clang_Module_create(const char *Name, CXSourceLocation_ DefinitionLoc,
                              CXModule_ Parent, bool IsFramework, bool IsExplicit,
                              unsigned VisibilityID) {
+  // LLVM 20 requires a ModuleConstructorTag whose constructor is private to
+  // ModuleMap. The tag is an empty access token with no state; reconstruct it
+  // so tests can still allocate synthetic modules independently of a ModuleMap.
+  alignas(clang::ModuleConstructorTag) unsigned char
+      TagStorage[sizeof(clang::ModuleConstructorTag)]{};
+  auto &Tag = *reinterpret_cast<clang::ModuleConstructorTag *>(TagStorage);
   auto M = std::make_unique<clang::Module>(
-      llvm::StringRef(Name), clang::SourceLocation::getFromPtrEncoding(DefinitionLoc),
-      reinterpret_cast<clang::Module *>(Parent), IsFramework, IsExplicit, VisibilityID);
+      Tag, llvm::StringRef(Name),
+      clang::SourceLocation::getFromPtrEncoding(DefinitionLoc),
+      reinterpret_cast<clang::Module *>(Parent), IsFramework, IsExplicit,
+      VisibilityID);
   return reinterpret_cast<CXModule_>(M.release());
 }
 
-void clang_Module_dispose(CXModule_ M) { delete reinterpret_cast<clang::Module *>(M); }
+void clang_Module_dispose(CXModule_ M) {
+  auto *Mod = reinterpret_cast<clang::Module *>(M);
+  // LLVM 20's destructor is default and does not delete submodules
+  // (ModuleMap bump-allocates them). Synthetic modules from
+  // clang_Module_create are new'd, so walk and delete children first.
+  llvm::SmallVector<clang::Module *, 4> Subs(Mod->submodules().begin(),
+                                            Mod->submodules().end());
+  for (auto It = Subs.rbegin(), E = Subs.rend(); It != E; ++It)
+    clang_Module_dispose(reinterpret_cast<CXModule_>(*It));
+  delete Mod;
+}
 
 const char *clang_Module_getName(CXModule_ M) {
   return reinterpret_cast<clang::Module *>(M)->Name.c_str();
@@ -180,7 +201,10 @@ CXModule_ clang_Module_findSubmodule(CXModule_ M, const char *Name) {
 }
 
 CXModule_ clang_Module_findOrInferSubmodule(CXModule_ M, const char *Name) {
-  return reinterpret_cast<CXModule_>(reinterpret_cast<clang::Module *>(M)->findOrInferSubmodule(llvm::StringRef(Name)));
+  // LLVM 20 moved inference onto ModuleMap. A synthetic module has no map, so
+  // this is a lookup of already-attached submodules — the same answer
+  // findSubmodule gives.
+  return clang_Module_findSubmodule(M, Name);
 }
 CXModule_ clang_Module_getGlobalModuleFragment(CXModule_ M) {
   return reinterpret_cast<CXModule_>(reinterpret_cast<clang::Module *>(M)->getGlobalModuleFragment());

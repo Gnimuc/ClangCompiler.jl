@@ -517,6 +517,9 @@ end
     # own canonical QualType (faithful by construction)
     n = 0
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carrier types and are not the stamped constructors.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         T = getproperty(CC, nm)
         (T isa DataType && T <: CC.AbstractBuiltinType) || continue
@@ -987,10 +990,10 @@ end
     @test CC.getAddressSpace(plain) == CC.LibClangEx.CXLangAS_Default
 
     # qualifier ordering
-    @test CC.isMoreQualifiedThan(cqual, plain)
-    @test !CC.isMoreQualifiedThan(plain, cqual)
-    @test CC.isAtLeastAsQualifiedAs(cqual, plain)
-    @test CC.isAtLeastAsQualifiedAs(plain, plain)
+    @test CC.isMoreQualifiedThan(cqual, plain, ctx)
+    @test !CC.isMoreQualifiedThan(plain, cqual, ctx)
+    @test CC.isAtLeastAsQualifiedAs(cqual, plain, ctx)
+    @test CC.isAtLeastAsQualifiedAs(plain, plain, ctx)
 
     # reference stripping / paren stripping are identities on a plain int
     @test CC.getNonReferenceType(qtof("qt_ref")).ptr == plain.ptr
@@ -1237,8 +1240,8 @@ end
     qcv = CC.withVolatile(qc)
     @test CC.hasConst(qcv) && CC.hasVolatile(qcv)
     @test CC.fromCVRMask(CC.getCVRQualifiers(qcv)) == qcv
-    @test CC.compatiblyIncludes(qcv, qc)
-    @test !CC.compatiblyIncludes(qc, qcv)
+    @test CC.compatiblyIncludes(qcv, qc, CC.get_ast_context(I))
+    @test !CC.compatiblyIncludes(qc, qcv, CC.get_ast_context(I))
     @test CC.isStrictSupersetOf(qcv, qc)
     @test !CC.isStrictSupersetOf(qc, qcv)
     @test !CC.hasAddressSpace(qcv)
@@ -1322,8 +1325,6 @@ end
     @test !(CC.isCanonicalAsParam(qt("wl9pod")))
     @test !CC.isConstantStorage(qt("wl9i"), ctx, false, false)
     @test CC.isConstantStorage(qt("wl9ci"), ctx, false, false)
-    @test CC.isTriviallyEqualityComparableType(qt("wl9i"), ctx)
-    @test !(CC.isTriviallyEqualityComparableType(qt("wl9d"), ctx))
 
     # QualType: CVR construction and pack-expansion stripping.
     ci = CC.withCVRQualifiers(qt("wl9i"), constmask)
@@ -1679,9 +1680,10 @@ end
     @test CC.hasAddressSpace(CC.withoutAddressSpace(qcv)) == false
     @test CC.hasTargetSpecificAddressSpace(qcv) == false
     @test CC.getAddressSpaceAttributePrintValue(qcv) == 0
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic, LX.CXLangAS_opencl_global) == true
-    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_generic) == false
+    ctx = CC.get_ast_context(I)
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_global, ctx) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_generic, LX.CXLangAS_opencl_global, ctx) == true
+    @test CC.isAddressSpaceSupersetOf(LX.CXLangAS_opencl_global, LX.CXLangAS_opencl_generic, ctx) == false
     @test CC.getAddrSpaceAsString(LX.CXLangAS_Default) isa String
     @test occursin("global", CC.getAddrSpaceAsString(LX.CXLangAS_opencl_global))
 
@@ -1971,10 +1973,10 @@ end
 
     # address spaces: everything in a plain C++ TU sits in the default space, which overlaps
     # itself and every other default-space type
-    @test CC.isAddressSpaceOverlapping(qt("ti_i"), qt("ti_p")) == true
-    @test CC.isAddressSpaceOverlapping(vci, vci) == true
-    @test_throws AssertionError CC.isAddressSpaceOverlapping(CC.QualType(C_NULL), vci)
-    @test_throws AssertionError CC.isAddressSpaceOverlapping(vci, CC.QualType(C_NULL))
+    @test CC.isAddressSpaceOverlapping(qt("ti_i"), qt("ti_p"), ctx) == true
+    @test CC.isAddressSpaceOverlapping(vci, vci, ctx) == true
+    @test_throws AssertionError CC.isAddressSpaceOverlapping(CC.QualType(C_NULL), vci, ctx)
+    @test_throws AssertionError CC.isAddressSpaceOverlapping(vci, CC.QualType(C_NULL), ctx)
 
     # BuiltinType -- the Kind round-trips through the Type-level kind queries. clang stamps
     # the OpenCL/SVE/RVV builtins into Kind first, so `int` lands in the 400s; assert the

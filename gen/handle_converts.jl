@@ -15,7 +15,7 @@
 # siblings under `AbstractType`.
 
 const HC_ROOT = dirname(@__DIR__)
-const HC_BINDINGS = joinpath(HC_ROOT, "lib", "18", "LibClangEx.jl")
+const HC_BINDINGS = joinpath(HC_ROOT, "lib", "20", "LibClangEx.jl")
 const HC_SRC = joinpath(HC_ROOT, "src", "clang")
 const HC_OUT = joinpath(HC_SRC, "core", "converts.jl")
 

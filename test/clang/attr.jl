@@ -14,6 +14,7 @@ const LX = CC.LibClangEx
     macro_to_category = Dict("ATTR" => :Attr, "TYPE_ATTR" => :TypeAttr, "STMT_ATTR" => :StmtAttr,
                              "DECL_OR_STMT_ATTR" => :DeclOrStmtAttr, "INHERITABLE_ATTR" => :InheritableAttr,
                              "DECL_OR_TYPE_ATTR" => :InheritableAttr, "INHERITABLE_PARAM_ATTR" => :InheritableParamAttr,
+                             "INHERITABLE_PARAM_OR_STMT_ATTR" => :InheritableParamOrStmtAttr,
                              "PARAMETER_ABI_ATTR" => :ParameterABIAttr, "HLSL_ANNOTATION_ATTR" => :HLSLAnnotationAttr)
     inc = joinpath(pkgdir(ClangCompiler), "deps", "ClangExtra", "include", "clang-ex", "AST", "AttrList.inc")
     entry_re = r"^([A-Z][A-Z0-9_]*)\((\w+)\)$"

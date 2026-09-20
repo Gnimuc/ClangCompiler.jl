@@ -202,7 +202,8 @@ bool clang_NumericLiteralParser_GetIntegerValue(CXNumericLiteralParser P,
 unsigned clang_NumericLiteralParser_GetFloatValue(CXNumericLiteralParser P,
                                                   double *Value) {
   llvm::APFloat Result(llvm::APFloat::IEEEdouble());
-  llvm::APFloat::opStatus Status = numBox(P)->Parser.GetFloatValue(Result);
+  llvm::APFloat::opStatus Status =
+      numBox(P)->Parser.GetFloatValue(Result, llvm::RoundingMode::NearestTiesToEven);
   *Value = Result.convertToDouble();
   return static_cast<unsigned>(Status);
 }

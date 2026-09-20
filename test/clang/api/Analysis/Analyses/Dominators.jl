@@ -104,6 +104,17 @@ using Test
 
                 @test !isempty(CC.printAsString(dt))
 
+                # the other half of the same gate: a block of another CFG is not in this
+                # tree, and llvm's getNode asserts on it rather than answering
+                cfg2 = CC.buildCFG(fd, CC.getBody(fd), ctx)
+                try
+                    e2 = CC.getEntry(cfg2)
+                    @test_throws AssertionError CC.dominates(dt, entry, e2)
+                    @test_throws AssertionError CC.isReachableFromEntry(dt, e2)
+                finally
+                    CC.dispose(cfg2)
+                end
+
                 # releaseMemory really drops the tree: no block has a node afterwards, and
                 # the dump gate — which exists because clang dereferences those nodes —
                 # refuses instead of crashing
@@ -111,6 +122,10 @@ using Test
                 @test CC.getNumRoots(dt) == 0
                 @test !CC.hasNode(dt, entry)
                 @test_throws AssertionError CC.dump(dt)
+                # the same gate on the three wrappers that reach llvm's `getNode` directly
+                @test_throws AssertionError CC.dominates(dt, entry, exit_)
+                @test_throws AssertionError CC.properlyDominates(dt, entry, exit_)
+                @test_throws AssertionError CC.isReachableFromEntry(dt, entry)
                 # ... and rebuilding restores it
                 CC.buildDominatorTree(dt, cfg)
                 @test CC.getNumRoots(dt) == 1
@@ -132,8 +147,20 @@ using Test
                 @test CC.hasNode(pdt, entry)
                 @test CC.findNearestCommonDominator(pdt, entry, entry).ptr == entry.ptr
                 @test !isempty(CC.printAsString(pdt))
+
+                # the parent-mismatch clause on the post-dominator pair
+                pcfg2 = CC.buildCFG(fd, CC.getBody(fd), ctx)
+                try
+                    p2 = CC.getEntry(pcfg2)
+                    @test_throws AssertionError CC.dominates(pdt, exit_, p2)
+                    @test_throws AssertionError CC.properlyDominates(pdt, exit_, p2)
+                finally
+                    CC.dispose(pcfg2)
+                end
                 CC.releaseMemory(pdt)
                 @test !CC.hasNode(pdt, entry)
+                @test_throws AssertionError CC.dominates(pdt, exit_, entry)
+                @test_throws AssertionError CC.properlyDominates(pdt, exit_, entry)
                 CC.buildDominatorTree(pdt, cfg)
                 @test CC.hasNode(pdt, entry)
             finally

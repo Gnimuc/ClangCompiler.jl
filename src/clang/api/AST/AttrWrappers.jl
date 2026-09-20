@@ -14,6 +14,18 @@ function AddressSpaceAttr(x::AbstractAttr)
     return AddressSpaceAttr(p)
 end
 
+function isAllocatingAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isAllocatingAttr(x)
+end
+
+function AllocatingAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToAllocatingAttr(x)
+    p == C_NULL && _cast_failed(AllocatingAttr, x)
+    return AllocatingAttr(p)
+end
+
 function isAnnotateTypeAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isAnnotateTypeAttr(x)
@@ -24,6 +36,18 @@ function AnnotateTypeAttr(x::AbstractAttr)
     p = clang_Attr_castToAnnotateTypeAttr(x)
     p == C_NULL && _cast_failed(AnnotateTypeAttr, x)
     return AnnotateTypeAttr(p)
+end
+
+function isArmAgnosticAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isArmAgnosticAttr(x)
+end
+
+function ArmAgnosticAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToArmAgnosticAttr(x)
+    p == C_NULL && _cast_failed(ArmAgnosticAttr, x)
+    return ArmAgnosticAttr(p)
 end
 
 function isArmInAttr(x::AbstractAttr)
@@ -122,6 +146,18 @@ function BTFTypeTagAttr(x::AbstractAttr)
     return BTFTypeTagAttr(p)
 end
 
+function isBlockingAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isBlockingAttr(x)
+end
+
+function BlockingAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToBlockingAttr(x)
+    p == C_NULL && _cast_failed(BlockingAttr, x)
+    return BlockingAttr(p)
+end
+
 function isCmseNSCallAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isCmseNSCallAttr(x)
@@ -132,6 +168,18 @@ function CmseNSCallAttr(x::AbstractAttr)
     p = clang_Attr_castToCmseNSCallAttr(x)
     p == C_NULL && _cast_failed(CmseNSCallAttr, x)
     return CmseNSCallAttr(p)
+end
+
+function isHLSLContainedTypeAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLContainedTypeAttr(x)
+end
+
+function HLSLContainedTypeAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLContainedTypeAttr(x)
+    p == C_NULL && _cast_failed(HLSLContainedTypeAttr, x)
+    return HLSLContainedTypeAttr(p)
 end
 
 function isHLSLGroupSharedAddressSpaceAttr(x::AbstractAttr)
@@ -146,16 +194,40 @@ function HLSLGroupSharedAddressSpaceAttr(x::AbstractAttr)
     return HLSLGroupSharedAddressSpaceAttr(p)
 end
 
-function isHLSLParamModifierAttr(x::AbstractAttr)
+function isHLSLROVAttr(x::AbstractAttr)
     @check_ptrs x
-    return clang_Attr_isHLSLParamModifierAttr(x)
+    return clang_Attr_isHLSLROVAttr(x)
 end
 
-function HLSLParamModifierAttr(x::AbstractAttr)
+function HLSLROVAttr(x::AbstractAttr)
     @check_ptrs x
-    p = clang_Attr_castToHLSLParamModifierAttr(x)
-    p == C_NULL && _cast_failed(HLSLParamModifierAttr, x)
-    return HLSLParamModifierAttr(p)
+    p = clang_Attr_castToHLSLROVAttr(x)
+    p == C_NULL && _cast_failed(HLSLROVAttr, x)
+    return HLSLROVAttr(p)
+end
+
+function isHLSLRawBufferAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLRawBufferAttr(x)
+end
+
+function HLSLRawBufferAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLRawBufferAttr(x)
+    p == C_NULL && _cast_failed(HLSLRawBufferAttr, x)
+    return HLSLRawBufferAttr(p)
+end
+
+function isHLSLResourceClassAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLResourceClassAttr(x)
+end
+
+function HLSLResourceClassAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLResourceClassAttr(x)
+    p == C_NULL && _cast_failed(HLSLResourceClassAttr, x)
+    return HLSLResourceClassAttr(p)
 end
 
 function isNoDerefAttr(x::AbstractAttr)
@@ -168,6 +240,30 @@ function NoDerefAttr(x::AbstractAttr)
     p = clang_Attr_castToNoDerefAttr(x)
     p == C_NULL && _cast_failed(NoDerefAttr, x)
     return NoDerefAttr(p)
+end
+
+function isNonAllocatingAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isNonAllocatingAttr(x)
+end
+
+function NonAllocatingAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToNonAllocatingAttr(x)
+    p == C_NULL && _cast_failed(NonAllocatingAttr, x)
+    return NonAllocatingAttr(p)
+end
+
+function isNonBlockingAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isNonBlockingAttr(x)
+end
+
+function NonBlockingAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToNonBlockingAttr(x)
+    p == C_NULL && _cast_failed(NonBlockingAttr, x)
+    return NonBlockingAttr(p)
 end
 
 function isObjCGCAttr(x::AbstractAttr)
@@ -350,18 +446,6 @@ function TypeNullUnspecifiedAttr(x::AbstractAttr)
     return TypeNullUnspecifiedAttr(p)
 end
 
-function isTypeNullableAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isTypeNullableAttr(x)
-end
-
-function TypeNullableAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToTypeNullableAttr(x)
-    p == C_NULL && _cast_failed(TypeNullableAttr, x)
-    return TypeNullableAttr(p)
-end
-
 function isTypeNullableResultAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isTypeNullableResultAttr(x)
@@ -398,6 +482,18 @@ function WebAssemblyFuncrefAttr(x::AbstractAttr)
     return WebAssemblyFuncrefAttr(p)
 end
 
+function isCXXAssumeAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCXXAssumeAttr(x)
+end
+
+function CXXAssumeAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCXXAssumeAttr(x)
+    p == C_NULL && _cast_failed(CXXAssumeAttr, x)
+    return CXXAssumeAttr(p)
+end
+
 function isCodeAlignAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isCodeAlignAttr(x)
@@ -420,6 +516,30 @@ function FallThroughAttr(x::AbstractAttr)
     p = clang_Attr_castToFallThroughAttr(x)
     p == C_NULL && _cast_failed(FallThroughAttr, x)
     return FallThroughAttr(p)
+end
+
+function isHLSLControlFlowHintAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLControlFlowHintAttr(x)
+end
+
+function HLSLControlFlowHintAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLControlFlowHintAttr(x)
+    p == C_NULL && _cast_failed(HLSLControlFlowHintAttr, x)
+    return HLSLControlFlowHintAttr(p)
+end
+
+function isHLSLLoopHintAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLLoopHintAttr(x)
+end
+
+function HLSLLoopHintAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLLoopHintAttr(x)
+    p == C_NULL && _cast_failed(HLSLLoopHintAttr, x)
+    return HLSLLoopHintAttr(p)
 end
 
 function isLikelyAttr(x::AbstractAttr)
@@ -590,6 +710,30 @@ function CDeclAttr(x::AbstractAttr)
     return CDeclAttr(p)
 end
 
+function isCountedByAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCountedByAttr(x)
+end
+
+function CountedByAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCountedByAttr(x)
+    p == C_NULL && _cast_failed(CountedByAttr, x)
+    return CountedByAttr(p)
+end
+
+function isCountedByOrNullAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCountedByOrNullAttr(x)
+end
+
+function CountedByOrNullAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCountedByOrNullAttr(x)
+    p == C_NULL && _cast_failed(CountedByOrNullAttr, x)
+    return CountedByOrNullAttr(p)
+end
+
 function isFastCallAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isFastCallAttr(x)
@@ -624,6 +768,18 @@ function LifetimeBoundAttr(x::AbstractAttr)
     p = clang_Attr_castToLifetimeBoundAttr(x)
     p == C_NULL && _cast_failed(LifetimeBoundAttr, x)
     return LifetimeBoundAttr(p)
+end
+
+function isLifetimeCaptureByAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isLifetimeCaptureByAttr(x)
+end
+
+function LifetimeCaptureByAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToLifetimeCaptureByAttr(x)
+    p == C_NULL && _cast_failed(LifetimeCaptureByAttr, x)
+    return LifetimeCaptureByAttr(p)
 end
 
 function isM68kRTDAttr(x::AbstractAttr)
@@ -722,6 +878,30 @@ function PreserveMostAttr(x::AbstractAttr)
     return PreserveMostAttr(p)
 end
 
+function isPreserveNoneAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isPreserveNoneAttr(x)
+end
+
+function PreserveNoneAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToPreserveNoneAttr(x)
+    p == C_NULL && _cast_failed(PreserveNoneAttr, x)
+    return PreserveNoneAttr(p)
+end
+
+function isRISCVVectorCCAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isRISCVVectorCCAttr(x)
+end
+
+function RISCVVectorCCAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToRISCVVectorCCAttr(x)
+    p == C_NULL && _cast_failed(RISCVVectorCCAttr, x)
+    return RISCVVectorCCAttr(p)
+end
+
 function isRegCallAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isRegCallAttr(x)
@@ -732,6 +912,30 @@ function RegCallAttr(x::AbstractAttr)
     p = clang_Attr_castToRegCallAttr(x)
     p == C_NULL && _cast_failed(RegCallAttr, x)
     return RegCallAttr(p)
+end
+
+function isSizedByAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isSizedByAttr(x)
+end
+
+function SizedByAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToSizedByAttr(x)
+    p == C_NULL && _cast_failed(SizedByAttr, x)
+    return SizedByAttr(p)
+end
+
+function isSizedByOrNullAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isSizedByOrNullAttr(x)
+end
+
+function SizedByOrNullAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToSizedByOrNullAttr(x)
+    p == C_NULL && _cast_failed(SizedByOrNullAttr, x)
+    return SizedByOrNullAttr(p)
 end
 
 function isStdCallAttr(x::AbstractAttr)
@@ -756,6 +960,18 @@ function SwiftAsyncCallAttr(x::AbstractAttr)
     p = clang_Attr_castToSwiftAsyncCallAttr(x)
     p == C_NULL && _cast_failed(SwiftAsyncCallAttr, x)
     return SwiftAsyncCallAttr(p)
+end
+
+function isSwiftAttrAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isSwiftAttrAttr(x)
+end
+
+function SwiftAttrAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToSwiftAttrAttr(x)
+    p == C_NULL && _cast_failed(SwiftAttrAttr, x)
+    return SwiftAttrAttr(p)
 end
 
 function isSwiftCallAttr(x::AbstractAttr)
@@ -794,6 +1010,18 @@ function ThisCallAttr(x::AbstractAttr)
     return ThisCallAttr(p)
 end
 
+function isTypeNullableAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isTypeNullableAttr(x)
+end
+
+function TypeNullableAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToTypeNullableAttr(x)
+    p == C_NULL && _cast_failed(TypeNullableAttr, x)
+    return TypeNullableAttr(p)
+end
+
 function isVectorCallAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isVectorCallAttr(x)
@@ -804,6 +1032,30 @@ function VectorCallAttr(x::AbstractAttr)
     p = clang_Attr_castToVectorCallAttr(x)
     p == C_NULL && _cast_failed(VectorCallAttr, x)
     return VectorCallAttr(p)
+end
+
+function isAnnotateAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isAnnotateAttr(x)
+end
+
+function AnnotateAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToAnnotateAttr(x)
+    p == C_NULL && _cast_failed(AnnotateAttr, x)
+    return AnnotateAttr(p)
+end
+
+function isHLSLParamModifierAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLParamModifierAttr(x)
+end
+
+function HLSLParamModifierAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLParamModifierAttr(x)
+    p == C_NULL && _cast_failed(HLSLParamModifierAttr, x)
+    return HLSLParamModifierAttr(p)
 end
 
 function isSwiftAsyncContextAttr(x::AbstractAttr)
@@ -852,18 +1104,6 @@ function SwiftIndirectResultAttr(x::AbstractAttr)
     p = clang_Attr_castToSwiftIndirectResultAttr(x)
     p == C_NULL && _cast_failed(SwiftIndirectResultAttr, x)
     return SwiftIndirectResultAttr(p)
-end
-
-function isAnnotateAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isAnnotateAttr(x)
-end
-
-function AnnotateAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToAnnotateAttr(x)
-    p == C_NULL && _cast_failed(AnnotateAttr, x)
-    return AnnotateAttr(p)
 end
 
 function isCFConsumedAttr(x::AbstractAttr)
@@ -962,6 +1202,18 @@ function UseHandleAttr(x::AbstractAttr)
     return UseHandleAttr(p)
 end
 
+function isHLSLPackOffsetAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLPackOffsetAttr(x)
+end
+
+function HLSLPackOffsetAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLPackOffsetAttr(x)
+    p == C_NULL && _cast_failed(HLSLPackOffsetAttr, x)
+    return HLSLPackOffsetAttr(p)
+end
+
 function isHLSLSV_DispatchThreadIDAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isHLSLSV_DispatchThreadIDAttr(x)
@@ -972,6 +1224,18 @@ function HLSLSV_DispatchThreadIDAttr(x::AbstractAttr)
     p = clang_Attr_castToHLSLSV_DispatchThreadIDAttr(x)
     p == C_NULL && _cast_failed(HLSLSV_DispatchThreadIDAttr, x)
     return HLSLSV_DispatchThreadIDAttr(p)
+end
+
+function isHLSLSV_GroupIDAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLSV_GroupIDAttr(x)
+end
+
+function HLSLSV_GroupIDAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLSV_GroupIDAttr(x)
+    p == C_NULL && _cast_failed(HLSLSV_GroupIDAttr, x)
+    return HLSLSV_GroupIDAttr(p)
 end
 
 function isHLSLSV_GroupIndexAttr(x::AbstractAttr)
@@ -986,6 +1250,18 @@ function HLSLSV_GroupIndexAttr(x::AbstractAttr)
     return HLSLSV_GroupIndexAttr(p)
 end
 
+function isHLSLSV_GroupThreadIDAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLSV_GroupThreadIDAttr(x)
+end
+
+function HLSLSV_GroupThreadIDAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLSV_GroupThreadIDAttr(x)
+    p == C_NULL && _cast_failed(HLSLSV_GroupThreadIDAttr, x)
+    return HLSLSV_GroupThreadIDAttr(p)
+end
+
 function isAMDGPUFlatWorkGroupSizeAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isAMDGPUFlatWorkGroupSizeAttr(x)
@@ -996,6 +1272,18 @@ function AMDGPUFlatWorkGroupSizeAttr(x::AbstractAttr)
     p = clang_Attr_castToAMDGPUFlatWorkGroupSizeAttr(x)
     p == C_NULL && _cast_failed(AMDGPUFlatWorkGroupSizeAttr, x)
     return AMDGPUFlatWorkGroupSizeAttr(p)
+end
+
+function isAMDGPUMaxNumWorkGroupsAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isAMDGPUMaxNumWorkGroupsAttr(x)
+end
+
+function AMDGPUMaxNumWorkGroupsAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToAMDGPUMaxNumWorkGroupsAttr(x)
+    p == C_NULL && _cast_failed(AMDGPUMaxNumWorkGroupsAttr, x)
+    return AMDGPUMaxNumWorkGroupsAttr(p)
 end
 
 function isAMDGPUNumSGPRAttr(x::AbstractAttr)
@@ -1346,18 +1634,6 @@ function AssumeAlignedAttr(x::AbstractAttr)
     return AssumeAlignedAttr(p)
 end
 
-function isAssumptionAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isAssumptionAttr(x)
-end
-
-function AssumptionAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToAssumptionAttr(x)
-    p == C_NULL && _cast_failed(AssumptionAttr, x)
-    return AssumptionAttr(p)
-end
-
 function isAvailabilityAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isAvailabilityAttr(x)
@@ -1380,6 +1656,18 @@ function AvailableOnlyInDefaultEvalMethodAttr(x::AbstractAttr)
     p = clang_Attr_castToAvailableOnlyInDefaultEvalMethodAttr(x)
     p == C_NULL && _cast_failed(AvailableOnlyInDefaultEvalMethodAttr, x)
     return AvailableOnlyInDefaultEvalMethodAttr(p)
+end
+
+function isBPFFastCallAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isBPFFastCallAttr(x)
+end
+
+function BPFFastCallAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToBPFFastCallAttr(x)
+    p == C_NULL && _cast_failed(BPFFastCallAttr, x)
+    return BPFFastCallAttr(p)
 end
 
 function isBPFPreserveAccessIndexAttr(x::AbstractAttr)
@@ -1610,6 +1898,18 @@ function CUDAGlobalAttr(x::AbstractAttr)
     return CUDAGlobalAttr(p)
 end
 
+function isCUDAGridConstantAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCUDAGridConstantAttr(x)
+end
+
+function CUDAGridConstantAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCUDAGridConstantAttr(x)
+    p == C_NULL && _cast_failed(CUDAGridConstantAttr, x)
+    return CUDAGridConstantAttr(p)
+end
+
 function isCUDAHostAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isCUDAHostAttr(x)
@@ -1728,6 +2028,18 @@ function CleanupAttr(x::AbstractAttr)
     p = clang_Attr_castToCleanupAttr(x)
     p == C_NULL && _cast_failed(CleanupAttr, x)
     return CleanupAttr(p)
+end
+
+function isClspvLibclcBuiltinAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isClspvLibclcBuiltinAttr(x)
+end
+
+function ClspvLibclcBuiltinAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToClspvLibclcBuiltinAttr(x)
+    p == C_NULL && _cast_failed(ClspvLibclcBuiltinAttr, x)
+    return ClspvLibclcBuiltinAttr(p)
 end
 
 function isCmseNSEntryAttr(x::AbstractAttr)
@@ -1874,6 +2186,30 @@ function ConvergentAttr(x::AbstractAttr)
     return ConvergentAttr(p)
 end
 
+function isCoroAwaitElidableAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCoroAwaitElidableAttr(x)
+end
+
+function CoroAwaitElidableAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCoroAwaitElidableAttr(x)
+    p == C_NULL && _cast_failed(CoroAwaitElidableAttr, x)
+    return CoroAwaitElidableAttr(p)
+end
+
+function isCoroAwaitElidableArgumentAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isCoroAwaitElidableArgumentAttr(x)
+end
+
+function CoroAwaitElidableArgumentAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToCoroAwaitElidableArgumentAttr(x)
+    p == C_NULL && _cast_failed(CoroAwaitElidableArgumentAttr, x)
+    return CoroAwaitElidableArgumentAttr(p)
+end
+
 function isCoroDisableLifetimeBoundAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isCoroDisableLifetimeBoundAttr(x)
@@ -1932,18 +2268,6 @@ function CoroWrapperAttr(x::AbstractAttr)
     p = clang_Attr_castToCoroWrapperAttr(x)
     p == C_NULL && _cast_failed(CoroWrapperAttr, x)
     return CoroWrapperAttr(p)
-end
-
-function isCountedByAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isCountedByAttr(x)
-end
-
-function CountedByAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToCountedByAttr(x)
-    p == C_NULL && _cast_failed(CountedByAttr, x)
-    return CountedByAttr(p)
 end
 
 function isDLLExportAttr(x::AbstractAttr)
@@ -2162,6 +2486,18 @@ function ExclusiveTrylockFunctionAttr(x::AbstractAttr)
     return ExclusiveTrylockFunctionAttr(p)
 end
 
+function isExplicitInitAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isExplicitInitAttr(x)
+end
+
+function ExplicitInitAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToExplicitInitAttr(x)
+    p == C_NULL && _cast_failed(ExplicitInitAttr, x)
+    return ExplicitInitAttr(p)
+end
+
 function isExternalSourceSymbolAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isExternalSourceSymbolAttr(x)
@@ -2342,6 +2678,18 @@ function HLSLShaderAttr(x::AbstractAttr)
     return HLSLShaderAttr(p)
 end
 
+function isHLSLWaveSizeAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHLSLWaveSizeAttr(x)
+end
+
+function HLSLWaveSizeAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHLSLWaveSizeAttr(x)
+    p == C_NULL && _cast_failed(HLSLWaveSizeAttr, x)
+    return HLSLWaveSizeAttr(p)
+end
+
 function isHotAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isHotAttr(x)
@@ -2352,6 +2700,18 @@ function HotAttr(x::AbstractAttr)
     p = clang_Attr_castToHotAttr(x)
     p == C_NULL && _cast_failed(HotAttr, x)
     return HotAttr(p)
+end
+
+function isHybridPatchableAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isHybridPatchableAttr(x)
+end
+
+function HybridPatchableAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToHybridPatchableAttr(x)
+    p == C_NULL && _cast_failed(HybridPatchableAttr, x)
+    return HybridPatchableAttr(p)
 end
 
 function isIBActionAttr(x::AbstractAttr)
@@ -2798,6 +3158,18 @@ function NoCommonAttr(x::AbstractAttr)
     return NoCommonAttr(p)
 end
 
+function isNoConvergentAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isNoConvergentAttr(x)
+end
+
+function NoConvergentAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToNoConvergentAttr(x)
+    p == C_NULL && _cast_failed(NoConvergentAttr, x)
+    return NoConvergentAttr(p)
+end
+
 function isNoDebugAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isNoDebugAttr(x)
@@ -2918,6 +3290,18 @@ function NoSanitizeAttr(x::AbstractAttr)
     return NoSanitizeAttr(p)
 end
 
+function isNoSpecializationsAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isNoSpecializationsAttr(x)
+end
+
+function NoSpecializationsAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToNoSpecializationsAttr(x)
+    p == C_NULL && _cast_failed(NoSpecializationsAttr, x)
+    return NoSpecializationsAttr(p)
+end
+
 function isNoSpeculativeLoadHardeningAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isNoSpeculativeLoadHardeningAttr(x)
@@ -2978,6 +3362,18 @@ function NoThrowAttr(x::AbstractAttr)
     return NoThrowAttr(p)
 end
 
+function isNoTrivialAutoVarInitAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isNoTrivialAutoVarInitAttr(x)
+end
+
+function NoTrivialAutoVarInitAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToNoTrivialAutoVarInitAttr(x)
+    p == C_NULL && _cast_failed(NoTrivialAutoVarInitAttr, x)
+    return NoTrivialAutoVarInitAttr(p)
+end
+
 function isNoUniqueAddressAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isNoUniqueAddressAttr(x)
@@ -3024,6 +3420,18 @@ function OMPAllocateDeclAttr(x::AbstractAttr)
     p = clang_Attr_castToOMPAllocateDeclAttr(x)
     p == C_NULL && _cast_failed(OMPAllocateDeclAttr, x)
     return OMPAllocateDeclAttr(p)
+end
+
+function isOMPAssumeAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isOMPAssumeAttr(x)
+end
+
+function OMPAssumeAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToOMPAssumeAttr(x)
+    p == C_NULL && _cast_failed(OMPAssumeAttr, x)
+    return OMPAssumeAttr(p)
 end
 
 function isOMPCaptureNoInitAttr(x::AbstractAttr)
@@ -3710,6 +4118,18 @@ function SYCLKernelAttr(x::AbstractAttr)
     return SYCLKernelAttr(p)
 end
 
+function isSYCLKernelEntryPointAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isSYCLKernelEntryPointAttr(x)
+end
+
+function SYCLKernelEntryPointAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToSYCLKernelEntryPointAttr(x)
+    p == C_NULL && _cast_failed(SYCLKernelEntryPointAttr, x)
+    return SYCLKernelEntryPointAttr(p)
+end
+
 function isSYCLSpecialClassAttr(x::AbstractAttr)
     @check_ptrs x
     return clang_Attr_isSYCLSpecialClassAttr(x)
@@ -3876,18 +4296,6 @@ function SwiftAsyncNameAttr(x::AbstractAttr)
     p = clang_Attr_castToSwiftAsyncNameAttr(x)
     p == C_NULL && _cast_failed(SwiftAsyncNameAttr, x)
     return SwiftAsyncNameAttr(p)
-end
-
-function isSwiftAttrAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isSwiftAttrAttr(x)
-end
-
-function SwiftAttrAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToSwiftAttrAttr(x)
-    p == C_NULL && _cast_failed(SwiftAttrAttr, x)
-    return SwiftAttrAttr(p)
 end
 
 function isSwiftBridgeAttr(x::AbstractAttr)
@@ -4188,6 +4596,18 @@ function UuidAttr(x::AbstractAttr)
     p = clang_Attr_castToUuidAttr(x)
     p == C_NULL && _cast_failed(UuidAttr, x)
     return UuidAttr(p)
+end
+
+function isVTablePointerAuthenticationAttr(x::AbstractAttr)
+    @check_ptrs x
+    return clang_Attr_isVTablePointerAuthenticationAttr(x)
+end
+
+function VTablePointerAuthenticationAttr(x::AbstractAttr)
+    @check_ptrs x
+    p = clang_Attr_castToVTablePointerAuthenticationAttr(x)
+    p == C_NULL && _cast_failed(VTablePointerAuthenticationAttr, x)
+    return VTablePointerAuthenticationAttr(p)
 end
 
 function isVecReturnAttr(x::AbstractAttr)
@@ -4692,18 +5112,6 @@ function OverloadableAttr(x::AbstractAttr)
     p = clang_Attr_castToOverloadableAttr(x)
     p == C_NULL && _cast_failed(OverloadableAttr, x)
     return OverloadableAttr(p)
-end
-
-function isRenderScriptKernelAttr(x::AbstractAttr)
-    @check_ptrs x
-    return clang_Attr_isRenderScriptKernelAttr(x)
-end
-
-function RenderScriptKernelAttr(x::AbstractAttr)
-    @check_ptrs x
-    p = clang_Attr_castToRenderScriptKernelAttr(x)
-    p == C_NULL && _cast_failed(RenderScriptKernelAttr, x)
-    return RenderScriptKernelAttr(p)
 end
 
 function isSwiftObjCMembersAttr(x::AbstractAttr)

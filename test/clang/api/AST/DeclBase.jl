@@ -152,7 +152,6 @@ end
 
     # deserialization identity of a decl parsed from source
     @test CC.isFromASTFile(nd) == false
-    @test CC.isDiscardedInGlobalModuleFragment(nd) == false
     @test !(CC.shouldSkipCheckingODR(nd))
     @test CC.getGlobalID(nd) == 0
     @test CC.getOwningModuleID(nd) == 0
@@ -510,6 +509,9 @@ const OBJC_ARGS = ["-x", "objective-c++", "-fobjc-runtime=macosx"]
     # surface, and some of them carry preconditions a blind sweep would walk into.
     stamped = Tuple{Symbol,Any,Any}[]
     for nm in names(CC; all=true)
+        # Julia 1.13 lists kwarg-default gensyms (`#NNNN#val`) here; they alias
+        # the real carrier types and are not the stamped `isFoo`/`Foo` surface.
+        occursin('#', String(nm)) && continue
         isdefined(CC, nm) || continue
         v = getproperty(CC, nm)
         v isa Type && v !== CC.Decl || continue

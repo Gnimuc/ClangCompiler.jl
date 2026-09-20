@@ -1,6 +1,6 @@
 using ClangCompiler
 import ClangCompiler as CC
-using ClangCompiler: create_interpreter, dispose, DeclFinder, get_decl
+using ClangCompiler: create_parser, create_interpreter, dispose, DeclFinder, get_decl
 using Test
 
 # Everything a target decides -- integer widths, alignments, record layout, endianness, the
@@ -8,9 +8,11 @@ using Test
 # which is why so many assertions elsewhere carry `# shape-only: the host decides this`. They
 # are not unassertable; they were merely unpinned.
 #
-# `create_interpreter(...; triple=)` takes the target and its include paths from that
+# `create_parser(...; triple=)` takes the target and its include paths from that
 # platform's GCC shard instead of HostPlatform(), so every assertion below is an equality on a
-# value *clang* decided and reads the same on macOS, Linux and Windows.
+# value *clang* decided and reads the same on macOS, Linux and Windows. The parser is the
+# cross-target driver: LLVM_full_jll on a host may not ship every backend, so the interpreter
+# cannot form a TargetMachine for a foreign architecture.
 #
 # Two limits. Only parsing and AST inspection cross-target: the JIT still emits for the host,
 # so nothing here executes code. And this does not rescue the markers whose value is
@@ -31,7 +33,7 @@ const PIN_LONG_BITS = 64
 const PIN_WCHAR_BITS = 32
 
 @testset "pinned target | scalar widths follow the target, not the runner" begin
-    let I = create_interpreter(String[]; triple=PIN)
+    let I = create_parser(String[]; triple=PIN)
         ti = CC.getTarget(CC.get_instance(I))
 
         # `long` is the canonical divergence -- 64 bits here, 32 under mingw -- and is the
@@ -75,7 +77,7 @@ end
           struct PinBits { unsigned a : 3; unsigned b : 5; };
           long pin_long; void *pin_ptr; char pin_char; int pin_int;
           """
-    let I = create_interpreter(String[]; triple=PIN)
+    let I = create_parser(String[]; triple=PIN)
         CC.parse(I, src)
         ctx = CC.get_ast_context(I)
         f = DeclFinder(I)
@@ -113,7 +115,7 @@ end
 @testset "pinned target | the ABI split is visible, not guessed" begin
     # The Itanium/MSVC divide is what makes mangling and vtable layout unassertable on an
     # unpinned interpreter. Pinned to an Itanium target, they become stated expectations.
-    let I = create_interpreter(String[]; triple=PIN)
+    let I = create_parser(String[]; triple=PIN)
         ti = CC.getTarget(CC.get_instance(I))
 
         # the triple round-trips: what was asked for is what clang built
@@ -139,7 +141,7 @@ end
     # Mangled names of primitive-typed signatures are stable once the ABI is pinned. Names
     # involving std types are NOT asserted here: those depend on the standard library the
     # target's shard provides, which is a separate axis from the ABI.
-    let I = create_interpreter(String[]; triple=PIN)
+    let I = create_parser(String[]; triple=PIN)
         CC.parse(I, "int pin_mangle(int, double);")
         f = DeclFinder(I)
         @test f(I, "pin_mangle")

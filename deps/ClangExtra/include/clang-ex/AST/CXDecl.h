@@ -1073,12 +1073,15 @@ bool clang_FieldDecl_isAnonymousStructOrUnion(CXFieldDecl FD);
 
 CXExpr clang_FieldDecl_getBitWidth(CXFieldDecl FD);
 
+// LLVM 20 dropped the ASTContext parameter. Ctx is accepted and ignored -- unlike
+// clang_FieldDecl_isZeroSize below, which still passes it through.
 unsigned clang_FieldDecl_getBitWidthValue(CXFieldDecl FD, CXASTContext Ctx);
 
 void clang_FieldDecl_setBitWidth(CXFieldDecl FD, CXExpr Width);
 
 void clang_FieldDecl_removeBitWidth(CXFieldDecl FD);
 
+// LLVM 20 dropped the ASTContext parameter. Ctx is accepted and ignored.
 bool clang_FieldDecl_isZeroLengthBitField(CXFieldDecl FD, CXASTContext Ctx);
 
 bool clang_FieldDecl_isZeroSize(CXFieldDecl FD, CXASTContext Ctx);

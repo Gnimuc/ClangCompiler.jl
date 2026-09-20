@@ -48,9 +48,7 @@ bool clang_EmitBackendOutput(CXCompilerInstance CI, LLVMModuleRef M, CXBackendAc
 
   auto &Diags = Compiler->getDiagnostics();
   unsigned ErrorsBefore = Diags.getNumErrors();
-  clang::EmitBackendOutput(Diags, Compiler->getHeaderSearchOpts(),
-                           Compiler->getCodeGenOpts(), Compiler->getTargetOpts(),
-                           Compiler->getLangOpts(),
+  clang::emitBackendOutput(*Compiler, Compiler->getCodeGenOpts(),
                            Compiler->getTarget().getDataLayoutString(), llvm::unwrap(M), BA,
                            Compiler->getFileManager().getVirtualFileSystemPtr(),
                            std::move(OS));

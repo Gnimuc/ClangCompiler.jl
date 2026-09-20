@@ -99,9 +99,11 @@ end
 
 """
     isUnevaluated(smt::AbstractStmt, stm::AbstractStmt, ctx::AbstractASTContext) -> Bool
-Return whether `smt` sits in an unevaluated operand of `stm` — the operand of a `sizeof`,
-`decltype`, `noexcept` or `typeid` — where a write would never actually happen. This is
-`clang::ExprMutationAnalyzer::isUnevaluated`, a static predicate needing no analyzer.
+Return whether `smt` is an unevaluated operand — of a `sizeof`, `decltype`, `noexcept` or
+`typeid` — where a write would never actually happen. This is
+`clang::ExprMutationAnalyzer::isUnevaluated`, a static predicate needing no analyzer. `stm`
+is accepted and ignored: LLVM 20 dropped the enclosing-statement parameter. It must still
+be non-null, which this wrapper checks.
 
 Not to be confused with the one-argument `isUnevaluated(::AbstractStringLiteral)`, which is
 clang's unrelated same-named accessor on string literals.

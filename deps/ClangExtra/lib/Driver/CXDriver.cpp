@@ -84,7 +84,8 @@ const char *clang_Driver_getClangProgramPath(CXDriver D) {
 }
 
 const char *clang_Driver_getInstalledDir(CXDriver D) {
-  return reinterpret_cast<clang::driver::Driver *>(D)->getInstalledDir();
+  // LLVM 20 dropped the separate InstalledDir override; Dir is what remains.
+  return reinterpret_cast<clang::driver::Driver *>(D)->Dir.c_str();
 }
 
 const char *clang_Driver_getDir(CXDriver D) {
@@ -108,8 +109,9 @@ const char *clang_Driver_getDefaultImageName(CXDriver D) {
 }
 
 CXLTOKind clang_Driver_getLTOMode(CXDriver D, bool IsOffload) {
-  return static_cast<CXLTOKind>(
-      reinterpret_cast<clang::driver::Driver *>(D)->getLTOMode(IsOffload));
+  auto *Drv = reinterpret_cast<clang::driver::Driver *>(D);
+  // LLVM 20 split the IsOffload argument into getOffloadLTOMode().
+  return static_cast<CXLTOKind>(IsOffload ? Drv->getOffloadLTOMode() : Drv->getLTOMode());
 }
 
 unsigned clang_Driver_getNumConfigFiles(CXDriver D) {
@@ -138,7 +140,8 @@ void clang_Driver_setPrependArg(CXDriver D, const char *Value) {
 }
 
 void clang_Driver_setInstalledDir(CXDriver D, const char *Value) {
-  reinterpret_cast<clang::driver::Driver *>(D)->setInstalledDir(llvm::StringRef(Value));
+  // LLVM 20 dropped InstalledDir; write Dir, which getInstalledDir now reads.
+  reinterpret_cast<clang::driver::Driver *>(D)->Dir = Value;
 }
 
 bool clang_Driver_isSaveTempsEnabled(CXDriver D) {
@@ -179,7 +182,9 @@ CXModuleHeaderMode clang_Driver_getModuleHeaderMode(CXDriver D) {
 }
 
 bool clang_Driver_isUsingLTO(CXDriver D, bool IsOffload) {
-  return reinterpret_cast<clang::driver::Driver *>(D)->isUsingLTO(IsOffload);
+  auto *Drv = reinterpret_cast<clang::driver::Driver *>(D);
+  // LLVM 20 split the IsOffload argument into isUsingOffloadLTO().
+  return IsOffload ? Drv->isUsingOffloadLTO() : Drv->isUsingLTO();
 }
 
 CXCompilation clang_Driver_BuildCompilation(CXDriver D, const char **Args,

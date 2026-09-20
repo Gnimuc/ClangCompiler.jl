@@ -40,6 +40,7 @@ typedef enum CXParseError {
 // underlying type is dropped here because the binding generator cannot read it).
 typedef enum CXLanguageKind {
   CXLanguageKind_LK_None,
+  CXLanguageKind_LK_C,
   CXLanguageKind_LK_Cpp,
   CXLanguageKind_LK_CSharp,
   CXLanguageKind_LK_Java,

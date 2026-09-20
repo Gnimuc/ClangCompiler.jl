@@ -4,13 +4,14 @@
 # resolve falls back to the base Decl.
 const DECL_KIND_TO_TYPE = Dict{CXDeclKind,Any}(
     LibClangEx.CXDeclKind_TranslationUnit => TranslationUnitDecl,
+    LibClangEx.CXDeclKind_TopLevelStmt => TopLevelStmtDecl,
     LibClangEx.CXDeclKind_RequiresExprBody => RequiresExprBodyDecl,
+    LibClangEx.CXDeclKind_OutlinedFunction => OutlinedFunctionDecl,
     LibClangEx.CXDeclKind_LinkageSpec => LinkageSpecDecl,
     LibClangEx.CXDeclKind_ExternCContext => ExternCContextDecl,
     LibClangEx.CXDeclKind_Export => ExportDecl,
     LibClangEx.CXDeclKind_Captured => CapturedDecl,
     LibClangEx.CXDeclKind_Block => BlockDecl,
-    LibClangEx.CXDeclKind_TopLevelStmt => TopLevelStmtDecl,
     LibClangEx.CXDeclKind_StaticAssert => StaticAssertDecl,
     LibClangEx.CXDeclKind_PragmaDetectMismatch => PragmaDetectMismatchDecl,
     LibClangEx.CXDeclKind_PragmaComment => PragmaCommentDecl,

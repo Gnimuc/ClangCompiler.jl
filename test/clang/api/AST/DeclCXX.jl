@@ -2039,8 +2039,7 @@ end
     @test f(I, "MDM0")
     mdm0 = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(mdm0)
-    CC.markEmpty(mdm0)
-    @test CC.isEmpty(mdm0)
+    @test !CC.isEmpty(mdm0)
     CC.markAbstract(mdm0)
     @test CC.isAbstract(mdm0)
     CC.setHasTrivialSpecialMemberForCall(mdm0)
@@ -2048,12 +2047,15 @@ end
     @test CC.hasTrivialMoveConstructorForCall(mdm0)
     @test CC.hasTrivialDestructorForCall(mdm0)
 
+    CC.parse(I, "struct MDMEmpty {};")
+    @test f(I, "MDMEmpty")
+    @test CC.isEmpty(CC.CXXRecordDecl(get_decl(f)))
+
     # a forward declaration carries no definition data: the setters reject it (Invariant 3)
     CC.parse(I, "struct MDMFwd;")
     @test f(I, "MDMFwd")
     mdmfwd = CC.CXXRecordDecl(get_decl(f))
     @test CC.hasDefinition(mdmfwd) == false
-    @test_throws AssertionError CC.markEmpty(mdmfwd)
     @test_throws AssertionError CC.markAbstract(mdmfwd)
     @test_throws AssertionError CC.setHasTrivialSpecialMemberForCall(mdmfwd)
 

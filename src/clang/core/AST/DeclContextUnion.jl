@@ -25,12 +25,14 @@ const AbstractDeclContextDecl = Union{AbstractBlockDecl,
                                       AbstractObjCInterfaceDecl,
                                       AbstractObjCProtocolDecl,
                                       AbstractObjCMethodDecl,
+                                      AbstractOutlinedFunctionDecl,
                                       AbstractRequiresExprBodyDecl,
                                       AbstractEnumDecl,
                                       AbstractRecordDecl,
                                       AbstractCXXRecordDecl,
                                       AbstractClassTemplateSpecializationDecl,
                                       AbstractClassTemplatePartialSpecializationDecl,
+                                      AbstractTopLevelStmtDecl,
                                       AbstractTranslationUnitDecl}
 
 # `DeclContext` is the one base in this package that is not at offset zero, so unlike

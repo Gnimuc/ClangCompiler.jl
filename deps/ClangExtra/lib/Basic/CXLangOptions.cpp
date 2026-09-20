@@ -13,7 +13,10 @@ bool clang_LangOptions_isCompilingModule(CXLangOptions LO) {
 }
 
 bool clang_LangOptions_isCompilingModuleInterface(CXLangOptions LO) {
-  return reinterpret_cast<clang::LangOptions *>(LO)->isCompilingModuleInterface();
+  // LLVM 20 dropped the named predicate; it was getCompilingModule() ==
+  // CMK_ModuleInterface.
+  return reinterpret_cast<clang::LangOptions *>(LO)->getCompilingModule() ==
+         clang::LangOptions::CMK_ModuleInterface;
 }
 
 bool clang_LangOptions_isCompilingModuleImplementation(CXLangOptions LO) {

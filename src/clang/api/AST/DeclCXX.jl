@@ -3095,19 +3095,6 @@ function removeConversion(x::AbstractCXXRecordDecl, old::AbstractNamedDecl)
 end
 
 """
-    markEmpty(x::AbstractCXXRecordDecl)
-Mark the class as empty (`clang::CXXRecordDecl::markEmpty`), the setter behind `isEmpty`.
-The flag only ever goes from `false` to `true`; the class exposes no way to clear it.
-
-PARTIAL: the flag lives in the class's definition data, so `hasDefinition(x)` must hold.
-"""
-function markEmpty(x::AbstractCXXRecordDecl)
-    @check_ptrs x
-    @assert hasDefinition(x) "the class must have a definition"
-    return clang_CXXRecordDecl_markEmpty(x)
-end
-
-"""
     setHasTrivialSpecialMemberForCall(x::AbstractCXXRecordDecl)
 Mark the copy constructor, the move constructor and the destructor as trivial for the
 purpose of passing the class by value (`clang::CXXRecordDecl::setHasTrivialSpecialMemberForCall`).

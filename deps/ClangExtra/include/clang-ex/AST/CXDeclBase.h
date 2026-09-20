@@ -316,6 +316,7 @@ bool clang_Decl_hasOwningModule(CXDecl D);
 
 CXModule_ clang_Decl_getOwningModule(CXDecl D);
 
+// LLVM 20 dropped the IgnoreLinkage parameter. It is accepted and ignored.
 CXModule_ clang_Decl_getOwningModuleForLinkage(CXDecl D, bool IgnoreLinkage);
 
 bool clang_Decl_isUnconditionallyVisible(CXDecl D);

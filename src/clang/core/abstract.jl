@@ -629,6 +629,12 @@ Supertype for `ConstantArrayType`s.
 abstract type AbstractConstantArrayType <: AbstractArrayType end
 
 """
+    abstract type AbstractArrayParameterType <: AbstractConstantArrayType
+Supertype for `ArrayParameterType`s.
+"""
+abstract type AbstractArrayParameterType <: AbstractConstantArrayType end
+
+"""
     abstract type AbstractIncompleteArrayType <: AbstractArrayType
 Supertype for `IncompleteArrayType`s.
 """
@@ -859,6 +865,12 @@ Supertype for `TopLevelStmtDecl`s.
 abstract type AbstractTopLevelStmtDecl <: AbstractDecl end
 
 """
+    abstract type AbstractOutlinedFunctionDecl <: AbstractDecl
+Supertype for `OutlinedFunctionDecl`s.
+"""
+abstract type AbstractOutlinedFunctionDecl <: AbstractDecl end
+
+"""
     abstract type AbstractVectorType <: AbstractType
 Supertype for `VectorType`s.
 """
@@ -995,3 +1007,27 @@ abstract type AbstractObjCObjectPointerType <: AbstractType end
 Supertype for `PipeType`s.
 """
 abstract type AbstractPipeType <: AbstractType end
+
+"""
+    abstract type AbstractBoundsAttributedType <: AbstractType
+Supertype for `BoundsAttributedType`s.
+"""
+abstract type AbstractBoundsAttributedType <: AbstractType end
+
+"""
+    abstract type AbstractCountAttributedType <: AbstractBoundsAttributedType
+Supertype for `CountAttributedType`s.
+"""
+abstract type AbstractCountAttributedType <: AbstractBoundsAttributedType end
+
+"""
+    abstract type AbstractHLSLAttributedResourceType <: AbstractType
+Supertype for `HLSLAttributedResourceType`s.
+"""
+abstract type AbstractHLSLAttributedResourceType <: AbstractType end
+
+"""
+    abstract type AbstractPackIndexingType <: AbstractType
+Supertype for `PackIndexingType`s.
+"""
+abstract type AbstractPackIndexingType <: AbstractType end

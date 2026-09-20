@@ -51,6 +51,13 @@ Clang_DIR = joinpath(LLVM.artifact_dir, "lib", "cmake", "clang")
 function build_clangex(cmake_path)
     config_opts = `-DLLVM_DIR=$(LLVM_DIR) -DClang_DIR=$(Clang_DIR) -DCMAKE_INSTALL_PREFIX=$(scratch_dir)`
     if Sys.iswindows()
+        # An msys2 gcc is newer than the runtime julia.exe ships, and a dynamic
+        # libclangex.dll binds julia's older copies by name at load -- the skew that
+        # deadlocked the Windows loader. BinaryBuilder builds never set this: their
+        # curated GCC is older than julia's runtime, the supported direction.
+        config_opts = `$config_opts -DCLANGEX_STATIC_GCC_RUNTIME=ON`
+    end
+    if Sys.iswindows()
         # prevent picking up MSVC
         config_opts = `$config_opts -G "MSYS Makefiles"`
     end

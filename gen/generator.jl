@@ -21,7 +21,7 @@ const dependencies = PkgSpec[PkgSpec(; name="LLVM_full_jll")]
 const libdir = joinpath(@__DIR__, "..", "lib")
 
 cd(@__DIR__) do
-    for (llvm_version, julia_version) in ((v"18.1.7", v"1.12"),)
+    for (llvm_version, julia_version) in ((v"20.1.8", v"1.13"),)
         @info "Generating..." llvm_version julia_version
         temp_prefix() do prefix
             # let prefix = Prefix(mktempdir())
@@ -64,7 +64,7 @@ cd(@__DIR__) do
                 # CXFooImpl end`, and gives no hook for a supertype. Attach one here: it is
                 # what lets a single method in src/clang/handles.jl speak about any two
                 # handles of this package at once, and so refuse a conversion between them.
-                out = joinpath(@__DIR__, "..", "lib", string(Base.libllvm_version.major), "LibClangEx.jl")
+                out = output_file_path
                 src = read(out, String)
                 src, n = let pat = r"^mutable struct (CX\w+Impl) end"m
                     replace(src, pat => s"mutable struct \1 <: AbstractCXImpl end"),

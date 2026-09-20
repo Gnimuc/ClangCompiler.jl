@@ -338,8 +338,8 @@ bool clang_HeaderFileInfo_getIsPragmaOnce(CXHeaderFileInfo HFI);
 
 CXCharacteristicKind clang_HeaderFileInfo_getDirInfo(CXHeaderFileInfo HFI);
 
-// Whether this record was supplied by an external source and has not changed since -- the
-// bit clang_HeaderSearch_copyExistingFileInfo's WantExternal parameter filters on.
+// Whether this record was supplied by an external source and has not changed since.
+// copyExistingFileInfo(WantExternal=false) uses getExistingLocalFileInfo and skips these.
 bool clang_HeaderFileInfo_getExternal(CXHeaderFileInfo HFI);
 
 bool clang_HeaderFileInfo_getIsModuleHeader(CXHeaderFileInfo HFI);
@@ -356,6 +356,7 @@ bool clang_HeaderFileInfo_getIsValid(CXHeaderFileInfo HFI);
 // date, and no entry point in this API can produce one.
 CXIdentifierInfo clang_HeaderFileInfo_getControllingMacroRaw(CXHeaderFileInfo HFI);
 
+// LLVM 20 dropped HeaderFileInfo::Framework. Always an empty string.
 CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI);
 
 // --- Owned snapshots of a HeaderFileInfo record ---------------------------------------
@@ -376,7 +377,8 @@ CXString clang_HeaderFileInfo_getFramework(CXHeaderFileInfo HFI);
 // same side effect the borrowing form has). Release with clang_HeaderFileInfo_dispose.
 CXHeaderFileInfo clang_HeaderSearch_copyFileInfo(CXHeaderSearch HS, CXFileEntryRef FE);
 
-// The record for File if one has ever been filled in, or NULL when none has. Release a
+// The record for File if one has ever been filled in, or NULL when none has. WantExternal
+// selects getExistingFileInfo (true) vs getExistingLocalFileInfo (false). Release a
 // non-NULL result with clang_HeaderFileInfo_dispose.
 CXHeaderFileInfo clang_HeaderSearch_copyExistingFileInfo(CXHeaderSearch HS,
                                                          CXFileEntryRef FE,

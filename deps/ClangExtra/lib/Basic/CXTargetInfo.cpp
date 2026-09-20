@@ -292,7 +292,7 @@ unsigned clang_TargetInfo_getDefaultAlignForAttributeAligned(CXTargetInfo_ TI) {
 }
 
 unsigned clang_TargetInfo_getMinGlobalAlign(CXTargetInfo_ TI, uint64_t Size) {
-  return reinterpret_cast<clang::TargetInfo *>(TI)->getMinGlobalAlign(Size);
+  return reinterpret_cast<clang::TargetInfo *>(TI)->getMinGlobalAlign(Size, false);
 }
 
 unsigned clang_TargetInfo_getNewAlign(CXTargetInfo_ TI) {
@@ -529,7 +529,7 @@ CXString clang_TargetInfo_getTargetDefines(CXTargetInfo_ TI, CXLangOptions LO) {
 bool clang_TargetInfo_getVScaleRange(CXTargetInfo_ TI, CXLangOptions LO, unsigned *Min,
                                      unsigned *Max) {
   auto Range = reinterpret_cast<clang::TargetInfo *>(TI)->getVScaleRange(
-      *reinterpret_cast<clang::LangOptions *>(LO));
+      *reinterpret_cast<clang::LangOptions *>(LO), false);
   if (!Range)
     return false;
   *Min = Range->first;
@@ -551,7 +551,9 @@ bool clang_TargetInfo_hasBuiltinMSVaList(CXTargetInfo_ TI) {
 }
 
 bool clang_TargetInfo_isRenderScriptTarget(CXTargetInfo_ TI) {
-  return reinterpret_cast<clang::TargetInfo *>(TI)->isRenderScriptTarget();
+  (void)TI;
+  // LLVM 20 dropped Language::RenderScript and TargetInfo::isRenderScriptTarget.
+  return false;
 }
 
 bool clang_TargetInfo_hasAArch64SVETypes(CXTargetInfo_ TI) {
@@ -846,9 +848,12 @@ bool clang_TargetInfo_doesFeatureAffectCodeGen(CXTargetInfo_ TI, const char *Fea
   return reinterpret_cast<clang::TargetInfo *>(TI)->doesFeatureAffectCodeGen(Feature);
 }
 
-CXString clang_TargetInfo_getFeatureDependencies(CXTargetInfo_ TI, const char *Feature) {
-  return extra::makeCXString(
-      reinterpret_cast<clang::TargetInfo *>(TI)->getFeatureDependencies(Feature).str());
+CXString clang_TargetInfo_getFeatureDependencies(CXTargetInfo_ TI,
+                                                 const char *Feature) {
+  (void)TI;
+  (void)Feature;
+  // LLVM 20 dropped TargetInfo::getFeatureDependencies.
+  return extra::makeCXString("");
 }
 
 bool clang_TargetInfo_isBranchProtectionSupportedArch(CXTargetInfo_ TI, const char *Arch) {
@@ -876,11 +881,16 @@ bool clang_TargetInfo_validateCpuSupports(CXTargetInfo_ TI, const char *Name) {
 }
 
 unsigned clang_TargetInfo_multiVersionSortPriority(CXTargetInfo_ TI, const char *Name) {
-  return reinterpret_cast<clang::TargetInfo *>(TI)->multiVersionSortPriority(Name);
+  (void)TI;
+  (void)Name;
+  // LLVM 20 dropped TargetInfo::multiVersionSortPriority.
+  return 0;
 }
 
 unsigned clang_TargetInfo_multiVersionFeatureCost(CXTargetInfo_ TI) {
-  return reinterpret_cast<clang::TargetInfo *>(TI)->multiVersionFeatureCost();
+  (void)TI;
+  // LLVM 20 dropped TargetInfo::multiVersionFeatureCost.
+  return 0;
 }
 
 bool clang_TargetInfo_validateCpuIs(CXTargetInfo_ TI, const char *Name) {

@@ -338,7 +338,8 @@ CXASTUnit clang_ASTUnit_LoadFromASTFile(const char *Filename, CXASTUnit_WhatToLo
   static const clang::RawPCHContainerReader Reader;
   auto AU = clang::ASTUnit::LoadFromASTFile(
       std::string(Filename), Reader, static_cast<clang::ASTUnit::WhatToLoad>(ToLoad),
-      llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE), FSOpts, HS, OnlyLocalDecls,
+      llvm::IntrusiveRefCntPtr<clang::DiagnosticsEngine>(DE), FSOpts, HS,
+      /*LangOpts=*/nullptr, OnlyLocalDecls,
       static_cast<clang::CaptureDiagsKind>(CaptureDiagnostics), AllowASTWithCompilerErrors,
       UserFilesAreVolatile);
   return reinterpret_cast<CXASTUnit>(AU.release());
