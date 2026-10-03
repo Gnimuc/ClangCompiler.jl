@@ -127,19 +127,17 @@ using Test
     dispose(I)
 
     # ---- src/utils.jl: LLVM helpers on a self-built module/engine ----
-    llctx = CC.LLVM.Context()
-    ft = CC.LLVM.FunctionType(CC.LLVM.VoidType())
-    mod1 = CC.LLVM.Module("covhelp_mod1")
-    CC.LLVM.Function(mod1, "covhelp_llfn", ft)
-    @test CC.LLVM.name(CC.lookup_function(mod1, "covhelp_llfn")) == "covhelp_llfn"
+    CC.LLVM.@dispose llctx=CC.LLVM.Context() mod1=CC.LLVM.Module("covhelp_mod1") begin
+        ft = CC.LLVM.FunctionType(CC.LLVM.VoidType())
+        CC.LLVM.Function(mod1, "covhelp_llfn", ft)
+        @test CC.lookup_function(mod1, "covhelp_llfn").name == "covhelp_llfn"
 
-    mod2 = CC.LLVM.Module("covhelp_mod2")
-    CC.LLVM.Function(mod2, "covhelp_llfn2", ft)
-    ee = CC.LLVM.Interpreter(mod2)  # takes ownership of mod2
-    CC.link_crt(ee)  # no static ctors -> no-op
-    CC.LLVM.dispose(ee)
-    CC.LLVM.dispose(mod1)
-    CC.LLVM.dispose(llctx)
+        mod2 = CC.LLVM.Module("covhelp_mod2")
+        CC.LLVM.Function(mod2, "covhelp_llfn2", ft)
+        CC.LLVM.@dispose ee=CC.LLVM.Interpreter(mod2) begin  # takes ownership of mod2
+            CC.link_crt(ee)  # no static ctors -> no-op
+        end
+    end
 end
 
 @testset "repaired string and LLVM helpers" begin
@@ -160,17 +158,17 @@ end
 
     # lookup_function on an ExecutionEngine (needs a defined function — the
     # engine does not materialize bare declarations)
-    llctx = CC.LLVM.Context()
-    ft = CC.LLVM.FunctionType(CC.LLVM.VoidType())
-    mod = CC.LLVM.Module("chf_mod")
-    fn = CC.LLVM.Function(mod, "chf_llfn", ft)
-    bb = CC.LLVM.BasicBlock(fn, "entry")
-    builder = CC.LLVM.IRBuilder()
-    CC.LLVM.position!(builder, bb)
-    CC.LLVM.ret!(builder)
-    CC.LLVM.dispose(builder)
-    ee = CC.LLVM.Interpreter(mod)
-    @test CC.LLVM.name(CC.lookup_function(ee, "chf_llfn")) == "chf_llfn"
-    CC.LLVM.dispose(ee)
-    CC.LLVM.dispose(llctx)
+    CC.LLVM.@dispose llctx=CC.LLVM.Context() begin
+        ft = CC.LLVM.FunctionType(CC.LLVM.VoidType())
+        mod = CC.LLVM.Module("chf_mod")
+        fn = CC.LLVM.Function(mod, "chf_llfn", ft)
+        bb = CC.LLVM.BasicBlock(fn, "entry")
+        CC.LLVM.@dispose builder=CC.LLVM.IRBuilder() begin
+            CC.LLVM.position!(builder, CC.LLVM.at_end(bb))
+            CC.LLVM.ret!(builder)
+        end
+        CC.LLVM.@dispose ee=CC.LLVM.Interpreter(mod) begin  # takes ownership of mod
+            @test CC.lookup_function(ee, "chf_llfn").name == "chf_llfn"
+        end
+    end
 end

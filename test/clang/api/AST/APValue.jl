@@ -15,7 +15,7 @@ using Test
     av = CC.evaluateValue(vd)
     @test CC.isInt(av)
     @test CC.getKind(av) == CC.LibClangEx.CXAPValueKind_Int
-    gv = CC.LLVM.GenericValue(CC.getInt(av))
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(av)))
     @test convert(Int, gv) == 5
     CC.LLVM.dispose(gv)
 
@@ -23,7 +23,7 @@ using Test
     ctx = CC.get_ast_context(I)
     init = CC.getInit(vd)
     av2 = CC.EvaluateAsRValue(init, ctx)
-    gv2 = CC.LLVM.GenericValue(CC.getInt(av2))
+    gv2 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(av2)))
     @test convert(Int, gv2) == 5
     CC.LLVM.dispose(gv2)
     CC.dispose(av2)
@@ -35,7 +35,7 @@ using Test
 
     avi = CC.EvaluateAsInt(init, ctx)
     @test CC.isInt(avi)
-    gvi = CC.LLVM.GenericValue(CC.getInt(avi))
+    gvi = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(avi)))
     @test convert(Int, gvi) == 5
     CC.LLVM.dispose(gvi)
     CC.dispose(avi)
@@ -47,8 +47,8 @@ using Test
 
     @test f(I, "cf")
     cf_init = CC.getInit(CC.VarDecl(get_decl(f)))
-    gvf = CC.LLVM.GenericValue(CC.EvaluateAsFloat(cf_init, ctx))
-    @test CC.LLVM.intwidth(gvf) == 32                  # APFloat bits (bitcastToAPInt)
+    gvf = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.EvaluateAsFloat(cf_init, ctx)))
+    @test gvf.intwidth == 32                  # APFloat bits (bitcastToAPInt)
     @test reinterpret(Float32, convert(UInt32, gvf)) == 1.5f0
     CC.LLVM.dispose(gvf)
 
@@ -104,15 +104,15 @@ end
     @test !CC.isFloat(av_int)
     @test !CC.isArray(av_int)
     @test !CC.isStruct(av_int)
-    gv_i = CC.LLVM.GenericValue(CC.getInt(av_int))
+    gv_i = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(av_int)))
     @test convert(Int, gv_i) == 5
 
     vd_cf = varof("cf")
     av_flt = CC.evaluateValue(vd_cf)
     @test CC.getKind(av_flt) == CC.LibClangEx.CXAPValueKind_Float
     @test CC.isFloat(av_flt)
-    gv_f = CC.LLVM.GenericValue(CC.getFloat(av_flt))
-    @test CC.LLVM.intwidth(gv_f) == 32
+    gv_f = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getFloat(av_flt)))
+    @test gv_f.intwidth == 32
     @test reinterpret(Float32, convert(UInt32, gv_f)) == 1.5f0
     CC.LLVM.dispose(gv_f)
 
@@ -125,7 +125,7 @@ end
     for (i, expected) in enumerate([10, 20, 30])
         elt = CC.getArrayInitializedElt(av_arr, i - 1)
         @test CC.isInt(elt)
-        gv_elt = CC.LLVM.GenericValue(CC.getInt(elt))
+        gv_elt = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(elt)))
         @test convert(Int, gv_elt) == expected
         CC.LLVM.dispose(gv_elt)
     end
@@ -138,13 +138,13 @@ end
     @test CC.getStructNumBases(av_struct) == 0
     fld0 = CC.getStructField(av_struct, 0)
     @test CC.isInt(fld0)
-    gv_f0 = CC.LLVM.GenericValue(CC.getInt(fld0))
+    gv_f0 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(fld0)))
     @test convert(Int, gv_f0) == 7
     CC.LLVM.dispose(gv_f0)
 
     fld1 = CC.getStructField(av_struct, 1)
     @test CC.isInt(fld1)
-    gv_f1 = CC.LLVM.GenericValue(CC.getInt(fld1))
+    gv_f1 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(fld1)))
     @test convert(Int, gv_f1) == 9
     CC.LLVM.dispose(gv_f1)
 
@@ -183,7 +183,7 @@ end
         if k == CC.LibClangEx.CXTemplateArgument_Type
             @test occursin("int", CC.getAsString(CC.getAsType(ta)))
         elseif k == CC.LibClangEx.CXTemplateArgument_Integral
-            gv = CC.LLVM.GenericValue(CC.getAsIntegral(ta))
+            gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getAsIntegral(ta)))
             @test convert(Int, gv) == 3
             CC.LLVM.dispose(gv)
         elseif k == CC.LibClangEx.CXTemplateArgument_Template
@@ -240,7 +240,7 @@ end
     # Integral, from the constexpr int's GenericValue.
     ta_int = CC.TemplateArgument(ctx, gv_i, int_qt)
     @test CC.getKind(ta_int) == CC.LibClangEx.CXTemplateArgument_Integral
-    gv_back = CC.LLVM.GenericValue(CC.getAsIntegral(ta_int))
+    gv_back = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getAsIntegral(ta_int)))
     @test convert(Int, gv_back) == 5
     CC.LLVM.dispose(gv_back)
     CC.setIntegralType(ta_int, int_qt)
@@ -298,20 +298,20 @@ end
     # Complex leaves ride the GenericValue bridge; the float halves carry raw bits.
     v_ci = valueof("pv_cint")
     @test CC.isComplexInt(v_ci)
-    gv = CC.LLVM.GenericValue(CC.getComplexIntReal(v_ci))
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexIntReal(v_ci)))
     @test convert(Int, gv) == 3
     CC.LLVM.dispose(gv)
-    gv = CC.LLVM.GenericValue(CC.getComplexIntImag(v_ci))
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexIntImag(v_ci)))
     @test convert(Int, gv) == 0
     CC.LLVM.dispose(gv)
 
     v_cf = valueof("pv_cdouble")
     @test CC.isComplexFloat(v_cf)
-    gv = CC.LLVM.GenericValue(CC.getComplexFloatReal(v_cf))
-    @test CC.LLVM.intwidth(gv) == 64
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexFloatReal(v_cf)))
+    @test gv.intwidth == 64
     @test reinterpret(Float64, convert(UInt64, gv)) == 1.5
     CC.LLVM.dispose(gv)
-    gv = CC.LLVM.GenericValue(CC.getComplexFloatImag(v_cf))
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexFloatImag(v_cf)))
     @test reinterpret(Float64, convert(UInt64, gv)) == 0.0
     CC.LLVM.dispose(gv)
 
@@ -417,13 +417,13 @@ end
     v_int = CC.evaluateValue(vd_int)
     gvr = CC.toIntegralConstant(v_int, CC.getType(vd_int), ctx)
     @test gvr != C_NULL
-    gv = CC.LLVM.GenericValue(gvr)
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(gvr))
     @test convert(Int, gv) == 7
     CC.LLVM.dispose(gv)
 
     gvr_null = CC.toIntegralConstant(v_null, CC.getType(vd_null), ctx)
     @test gvr_null != C_NULL
-    CC.LLVM.dispose(CC.LLVM.GenericValue(gvr_null))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(gvr_null)))
     @test CC.toIntegralConstant(v_ptr, CC.getType(vd_ptr), ctx) == C_NULL
 
     # An owned indeterminate value, swapped against an owned evaluated one.
@@ -610,8 +610,8 @@ end
     # profiles identical — equal profiles always hash equal.
     gv7 = CC.getInt(av7)
     CC.setInt(av5, gv7, false)
-    CC.LLVM.dispose(CC.LLVM.GenericValue(gv7))
-    back = CC.LLVM.GenericValue(CC.getInt(av5))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(gv7)))
+    back = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(av5)))
     @test convert(Int, back) == 7
     CC.LLVM.dispose(back)
     @test CC.getProfileHash(av5) == CC.getProfileHash(av7)
@@ -621,8 +621,8 @@ end
     @test CC.isFloat(avd1) && CC.isFloat(avd2)
     gvd2 = CC.getFloat(avd2)
     CC.setFloat(avd1, gvd2)
-    CC.LLVM.dispose(CC.LLVM.GenericValue(gvd2))
-    backf = CC.LLVM.GenericValue(CC.getFloat(avd1))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(gvd2)))
+    backf = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getFloat(avd1)))
     @test reinterpret(Float64, convert(UInt64, backf)) == 2.5
     CC.LLVM.dispose(backf)
 
@@ -630,9 +630,9 @@ end
     @test CC.isComplexInt(avci1) && CC.isComplexInt(avci2)
     r_i, i_i = CC.getComplexIntReal(avci2), CC.getComplexIntImag(avci2)
     CC.setComplexInt(avci1, r_i, i_i, false)
-    CC.LLVM.dispose(CC.LLVM.GenericValue(r_i))
-    CC.LLVM.dispose(CC.LLVM.GenericValue(i_i))
-    backci = CC.LLVM.GenericValue(CC.getComplexIntReal(avci1))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(r_i)))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(i_i)))
+    backci = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexIntReal(avci1)))
     @test convert(Int, backci) == 9
     CC.LLVM.dispose(backci)
 
@@ -640,9 +640,9 @@ end
     @test CC.isComplexFloat(avcd1) && CC.isComplexFloat(avcd2)
     r_f, i_f = CC.getComplexFloatReal(avcd2), CC.getComplexFloatImag(avcd2)
     CC.setComplexFloat(avcd1, r_f, i_f)
-    CC.LLVM.dispose(CC.LLVM.GenericValue(r_f))
-    CC.LLVM.dispose(CC.LLVM.GenericValue(i_f))
-    backcd = CC.LLVM.GenericValue(CC.getComplexFloatReal(avcd1))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(r_f)))
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(i_f)))
+    backcd = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getComplexFloatReal(avcd1)))
     @test reinterpret(Float64, convert(UInt64, backcd)) == 4.25
     CC.LLVM.dispose(backcd)
 
@@ -651,12 +651,12 @@ end
     @test CC.isUnion(avu)
     fld = CC.getUnionField(avu)
     @test CC.getName(fld) == "a"
-    before = CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu)))
+    before = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu))))
     @test convert(Int, before) == 7
     CC.LLVM.dispose(before)
     CC.setUnion(avu, fld, av3)
     @test CC.getUnionField(avu).ptr == fld.ptr
-    after = CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu)))
+    after = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(CC.getUnionValue(avu))))
     @test convert(Int, after) == 3
     CC.LLVM.dispose(after)
 

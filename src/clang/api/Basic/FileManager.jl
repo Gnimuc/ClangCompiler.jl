@@ -101,7 +101,7 @@ function getBufferForFile(filemgr::FileManager, entry::FileEntryRef; is_volatile
     @check_ptrs filemgr entry
     buf = clang_FileManager_getBufferForFile(filemgr, entry, is_volatile, requires_null_terminator)
     @assert buf != C_NULL "failed to read the file into a memory buffer."
-    return LLVM.MemoryBuffer(buf)
+    return LLVM.adopt(LLVM.MemoryBuffer(buf))
 end
 
 """
@@ -286,11 +286,15 @@ dispose(x::InMemoryFileSystem) = clang_InMemoryFileSystem_dispose(x)
             buffer::LLVM.MemoryBuffer) -> Bool
 Add `path` with the contents of `buffer`, taking ownership of the buffer. Return `false`
 when a file of that name is already present with different contents, in which case the
-buffer is dropped rather than installed.
+buffer is dropped rather than installed. Either way `buffer` is consumed: it can't be used
+afterwards, and disposing of it does nothing.
 """
 function addFile(x::AbstractInMemoryFileSystem, path::AbstractString, mtime::Integer, buffer::LLVM.MemoryBuffer)
     @check_ptrs x
-    return clang_InMemoryFileSystem_addFile(x, path, Int64(mtime), buffer)
+    # clang takes the buffer once it is called: convert the other arguments first, which can
+    # throw, and then hand the buffer over (which rejects one that was handed over already)
+    path, mtime = String(path), Int64(mtime)
+    return clang_InMemoryFileSystem_addFile(x, path, mtime, LLVM.consume!(buffer))
 end
 
 """

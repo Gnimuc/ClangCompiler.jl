@@ -486,7 +486,7 @@ This function allocates and one should call `LLVM.dispose` to release the resour
 function getBufferForFile(x::AbstractASTUnit, filename::AbstractString)
     @check_ptrs x
     buf = clang_ASTUnit_getBufferForFile(x, filename)
-    return buf == C_NULL ? nothing : LLVM.MemoryBuffer(buf)
+    return buf == C_NULL ? nothing : LLVM.adopt(LLVM.MemoryBuffer(buf))
 end
 
 """

@@ -1006,6 +1006,7 @@ using ClangCompiler: get_tag
 
         ecd = CC.EnumConstantDecl(ctx, ed, gloc, id, qt_int, CC.Expr_(C_NULL), gv)
         @test CC.getName(ecd) == "dk_gvar"
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(gv)))  # EnumConstantDecl copies the value
 
         # ================= CapturedDecl =================
         cd_f = CC.CapturedDecl(ctx, dc, 1)
@@ -2033,8 +2034,8 @@ end
         CC.setInitVal(fresh, ctx, v_blue, false)
         @test CC.getEnumConstantDeclValue(fresh) == CC.getEnumConstantDeclValue(ecs[2])
         @test CC.getEnumConstantDeclValue(fresh) != CC.getEnumConstantDeclValue(ecs[1])
-        CC.LLVM.API.LLVMDisposeGenericValue(v_red)
-        CC.LLVM.API.LLVMDisposeGenericValue(v_blue)
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(v_red)))
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(v_blue)))
 
         # ---------------- setTemplateParameterListsInfo ----------------
         ctd = CC.ClassTemplateDecl(look("DGTmpl"))

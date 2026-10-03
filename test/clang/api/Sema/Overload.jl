@@ -342,7 +342,7 @@ end
         k, ty = CC.getNarrowingKind(CC.getStandard(conv), ctx, from, value, ignore_float_to_integral)
         constant = nothing
         if CC.getKind(value) == CC.CXAPValueKind_Int
-            gv = CC.LLVM.GenericValue(CC.getInt(value))
+            gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(value)))
             constant = convert(Int, gv)
             CC.LLVM.dispose(gv)
         end

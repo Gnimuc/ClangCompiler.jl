@@ -109,8 +109,9 @@ using Test
     cgJ = CC.getCodeGen(J.interp)
     relmod = CC.ReleaseModule(cgJ)
     @test relmod isa CC.LLVM.Module
-    newmod = CC.StartModule(cgJ, CC.LLVM.context(relmod), "cov_module")
+    newmod = CC.StartModule(cgJ, relmod.context, "cov_module")
     @test newmod isa CC.LLVM.Module
+    CC.LLVM.dispose(relmod)  # ReleaseModule transfers ownership to us
 
     dispose(f)
     dispose(I)

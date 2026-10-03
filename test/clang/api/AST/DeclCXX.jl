@@ -571,12 +571,12 @@ end
         @test length(ecs) == 2
         v = CC.getInitVal(ecs[1])
         @test v != C_NULL
-        CC.LLVM.API.LLVMDisposeGenericValue(v)
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(v)))
         (vmax, vmin) = CC.getValueRange(ed)
         @test vmax != C_NULL
         @test vmin != C_NULL
-        CC.LLVM.API.LLVMDisposeGenericValue(vmax)
-        CC.LLVM.API.LLVMDisposeGenericValue(vmin)
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(vmax)))
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(vmin)))
 
         # --- StaticAssertDecl (DeclCXX) reached by walking the TU ---
         tu = CC.getTranslationUnitDecl(ctx)
@@ -1797,7 +1797,7 @@ end
     @test apv.ptr != C_NULL
     @test CC.getKind(apv) == LX.CXAPValueKind_Struct
     @test CC.getStructNumFields(apv) == 4
-    gv_data1 = CC.LLVM.GenericValue(CC.getInt(CC.getStructField(apv, 0)))
+    gv_data1 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(CC.getStructField(apv, 0))))
     @test convert(UInt, gv_data1) == 0x12345678
     CC.LLVM.dispose(gv_data1)
     @test CC.getArraySize(CC.getStructField(apv, 3)) == 8

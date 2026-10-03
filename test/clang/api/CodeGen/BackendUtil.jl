@@ -20,7 +20,7 @@ const LX = CC.LibClangEx
     ptu = CC.parse(J, "extern \"C\" int beu_add(int a, int b) { return a + b; }")
     mod = CC.getModule(ptu)
     @test mod !== nothing
-    @test "beu_add" in [LLVM.name(fn) for fn in LLVM.functions(mod)]
+    @test "beu_add" in [fn.name for fn in mod.functions]
 
     dir = mktempdir()
 

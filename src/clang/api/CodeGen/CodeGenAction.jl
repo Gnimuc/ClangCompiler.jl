@@ -3,7 +3,7 @@ function takeModule(x::T) where {T<:AbstractCodeGenAction}
     @check_ptrs x
     m = clang_CodeGenAction_takeModule(x)
     m == C_NULL && error("failed to generate IR.")
-    return LLVM.Module(m)
+    return LLVM.adopt(LLVM.Module(m))
 end
 
 """

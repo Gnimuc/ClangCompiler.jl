@@ -282,10 +282,10 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
          Nothing, Ptr{Cvoid})
         llty = CC.jlty_to_llvmty(T, llctx)                         # @172-@193
         @test llty isa CC.LLVM.LLVMType
-        @test CC.LLVM.context(llty) == llctx
+        @test llty.context == llctx
     end
-    @test CC.LLVM.width(CC.jlty_to_llvmty(Bool, llctx)) == 8
-    @test CC.LLVM.width(CC.jlty_to_llvmty(UInt128, llctx)) == 128
+    @test CC.jlty_to_llvmty(Bool, llctx).width == 8
+    @test CC.jlty_to_llvmty(UInt128, llctx).width == 128
     @test CC.jlty_to_llvmty(Float16, llctx) isa CC.LLVM.FloatingPointType
     @test CC.jlty_to_llvmty(Nothing, llctx) isa CC.LLVM.VoidType
     @test CC.jlty_to_llvmty(Ptr{Cvoid}, llctx) isa CC.LLVM.PointerType
@@ -297,7 +297,7 @@ using ClangCompiler: DeclFinder, get_decl, get_tag
     cgm = CC.get_codegen_module(I)
     memty = CC.clty_to_llvmty_mem(qtof("tmv_int"), cgm)            # @199
     @test memty isa CC.LLVM.IntegerType
-    @test CC.LLVM.width(memty) == 32
+    @test memty.width == 32
     # the AbstractType path routes through get_qual_type
     @test CC.clty_to_llvmty_mem(tpof("tmv_int"), cgm) isa CC.LLVM.IntegerType
 

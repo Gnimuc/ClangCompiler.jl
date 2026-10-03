@@ -89,8 +89,8 @@ end
     # testset below, which now runs through this path.
     ta_i = CC.TemplateArgument(ctx, 4, int_qt)
     @test CC.getKind(ta_i) == CC.LibClangEx.CXTemplateArgument_Integral
-    gv_v = LLVM.GenericValue(CC.getAsIntegral(ta))
-    gv_i = LLVM.GenericValue(CC.getAsIntegral(ta_i))
+    gv_v = LLVM.adopt(LLVM.GenericValue(CC.getAsIntegral(ta)))
+    gv_i = LLVM.adopt(LLVM.GenericValue(CC.getAsIntegral(ta_i)))
     @test convert(Int, gv_v) == 4
     @test convert(Int, gv_i) == convert(Int, gv_v)
     @test CC.getAsString(CC.getIntegralType(ta_i)) == CC.getAsString(CC.getIntegralType(ta))

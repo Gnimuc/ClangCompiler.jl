@@ -17,7 +17,6 @@ include("jllshim.jl")
 using .JLLShim
 
 using LLVM: LLVM
-using LLVM.Interop: call_function
 
 const llvm_version = string(Base.libllvm_version.major)
 

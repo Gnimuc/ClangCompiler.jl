@@ -206,10 +206,12 @@ try
         if kind == CC.LibClangEx.CXTemplateArgument_Type
             println("  [", i, "] ", kind, "  ->  ", CC.getAsString(CC.getAsType(a)))
         elseif kind == CC.LibClangEx.CXTemplateArgument_Integral
-            v = LLVM.GenericValue(CC.getAsIntegral(a))
-            println("  [", i, "] ", kind, "  ->  ", convert(Int, v), " : ",
-                    CC.getAsString(CC.getIntegralType(a)), " (",
-                    LLVM.intwidth(v), " bits)")
+            # the value comes back as a caller-owned generic value
+            LLVM.@dispose v=LLVM.adopt(LLVM.GenericValue(CC.getAsIntegral(a))) begin
+                println("  [", i, "] ", kind, "  ->  ", convert(Int, v), " : ",
+                        CC.getAsString(CC.getIntegralType(a)), " (",
+                        v.intwidth, " bits)")
+            end
         end
     end
 
@@ -321,7 +323,11 @@ try
     # there is no `N` any more, only the integer clang put in its place.
     body = CC.getBody(sum_fn)
     literals = [n for n in CC.subtree(body) if n isa CC.IntegerLiteral]
-    vals = [convert(Int, LLVM.GenericValue(CC.getValue(n))) for n in literals]
+    vals = map(literals) do n
+        LLVM.@dispose v=LLVM.adopt(LLVM.GenericValue(CC.getValue(n))) begin
+            convert(Int, v)
+        end
+    end
     println("  body        : ", length(CC.subtree(body)), " AST nodes, integer literals ", vals)
     println("                 the `4` is the loop bound `N`, substituted into the body itself")
 

@@ -90,16 +90,16 @@ end
     fd = CC.FunctionDecl(get_decl(f))
     fn = CC.GetAddrOfGlobal(cg, fd, true)
     @test fn isa LLVM.Function
-    @test LLVM.name(fn) == CC.GetMangledName(cg, fd)
+    @test fn.name == CC.GetMangledName(cg, fd)
     # the same entity whichever way it is asked for
-    @test LLVM.name(CC.GetAddrOfGlobal(cg, fd, false)) == LLVM.name(fn)
+    @test CC.GetAddrOfGlobal(cg, fd, false).name == fn.name
 
     @test f(I, "mb_addr_gv")
     vd = CC.VarDecl(get_decl(f))
     gv = CC.GetAddrOfGlobal(cg, vd, true)
     @test gv !== nothing
     @test !(gv isa LLVM.Function)
-    @test LLVM.name(gv) == "mb_addr_gv"
+    @test gv.name == "mb_addr_gv"
 
     dispose(f)
     dispose(I)
@@ -114,7 +114,7 @@ end
     # the generator owns a module of its own from the moment it is built -- that module is
     # the whole point of driving a Parser into it
     mod = CC.GetModule(cg)
-    @test LLVM.name(mod) == "standalone_cgen"
+    @test mod.name == "standalone_cgen"
     # The llvm::Module exists from construction, but the clang::CodeGenModule does not:
     # clang materialises it in CodeGenerator::Initialize(ASTContext), which is what an
     # action would call. Until then CGM is NULL -- the partition below is the whole

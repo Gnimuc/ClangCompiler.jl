@@ -77,7 +77,7 @@ get_irgenerator(x::CxxCompiler) = x.irgen
 The JIT's main dylib — where [`compile`](@ref) puts the module and where
 [`link_process_symbols`](@ref) puts the process's symbols. Borrowed: it belongs to the JIT.
 """
-get_dylib(x::CxxCompiler) = LLVM.JITDylib(x.jit)
+get_dylib(x::CxxCompiler) = x.jit.main_dylib
 
 """
     link_process_symbols(x::CxxCompiler) -> CxxCompiler
@@ -98,9 +98,7 @@ without it `get_symbol_address(x, "malloc")` raises `LLVM.LLVMException`, and wi
 address comes back.
 """
 function link_process_symbols(x::CxxCompiler)
-    jit = get_jit(x)
-    dg = LLVM.CreateDynamicLibrarySearchGeneratorForProcess(LLVM.get_prefix(jit))
-    LLVM.add!(get_dylib(x), dg)
+    LLVM.add!(get_dylib(x), LLVM.DynamicLibrarySearchGenerator(get_jit(x)))
     return x
 end
 

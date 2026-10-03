@@ -57,8 +57,8 @@ end
     # Clang emits a body for what the snippet defined and a bare declaration for what it
     # only referenced -- the partition is the frontend's decision, not this wrapper's.
     bodies = Dict{String,Bool}()
-    for f in LLVM.functions(mod)
-        bodies[LLVM.name(f)] = !isempty(LLVM.blocks(f))
+    for f in mod.functions
+        bodies[f.name] = !isempty(f.blocks)
     end
     @test bodies["irg_add"] == true
     @test bodies["irg_calls"] == true
@@ -66,7 +66,7 @@ end
 
     # The module is named after the main file, which is the one this call named -- so this
     # also says the in-memory buffer was mapped in under that name and found.
-    @test LLVM.name(mod) == "input.cc"
+    @test mod.name == "input.cc"
 
     LLVM.dispose(mod)
 
@@ -157,7 +157,7 @@ end
     for (language, name) in pairs(CC.SOURCE_NAMES)
         gen = create_irgenerator("int irg_lang(void) { return 0; }"; language)
         mod = take_module(gen)
-        @test LLVM.name(mod) == name
+        @test mod.name == name
         LLVM.dispose(mod)
         dispose(gen)
     end
@@ -176,10 +176,10 @@ end
     end
     gen = create_irgenerator("""extern "C" long irg_size() { return sizeof(long); }"""; triple=PIN_TRIPLE)
     mod = take_module(gen)
-    @test LLVM.triple(mod) == "x86_64-unknown-linux-gnu"
+    @test mod.triple == "x86_64-unknown-linux-gnu"
     # `p270`/`p271`/`p272` are the x86 address spaces, and `f80:128` is the x87 long double
     # -- neither appears in an AArch64 or a Windows layout string.
-    layout = string(LLVM.datalayout(mod))
+    layout = string(mod.datalayout)
     @test occursin("p270:32:32", layout)
     @test occursin("f80:128", layout)
     LLVM.dispose(mod)
@@ -266,7 +266,7 @@ end
     @test CC.hasSourceManager(get_instance(gen2)) == true
     @test CC.hasTarget(get_instance(gen2)) == true
     mod = take_module(gen2)
-    @test any(LLVM.name(f) == "irg_df2" for f in LLVM.functions(mod))
+    @test any(f.name == "irg_df2" for f in mod.functions)
     LLVM.dispose(mod)
     dispose(gen2)
 end
@@ -284,7 +284,7 @@ end
 
     gen = create_irgenerator("""extern "C" int irg_r2() { return 1; }"""; diag_consumer=buf)
     mod = take_module(gen)
-    @test any(LLVM.name(f) == "irg_r2" for f in LLVM.functions(mod))
+    @test any(f.name == "irg_r2" for f in mod.functions)
     LLVM.dispose(mod)
     dispose(gen)
 
@@ -344,22 +344,19 @@ end
     # one does not: the whole unit arrives as one module, and `compile(cc, mod)` takes it back.
     cc = create_compiler("""extern "C" int irg_mul(int a, int b) { return a * b; }""")
     mod = take_module(cc)
-    @test any(LLVM.name(f) == "irg_mul" for f in LLVM.functions(mod))
+    @test any(f.name == "irg_mul" for f in mod.functions)
 
     # A function added by hand reaches the JIT with the rest of the module, which is the
     # point of handing the module back at all. The module's context has to be made the
     # active one first: an `IRGenerator` keeps it inside a `ThreadSafeContext`, which is a
     # different stack from the one `Int32Type()` and `IRBuilder()` read.
-    LLVM.context!(LLVM.context(mod)) do
+    LLVM.context!(mod.context) do
         i32 = LLVM.Int32Type()
         fn = LLVM.Function(mod, "irg_grafted", LLVM.FunctionType(i32, [i32]))
         entry = LLVM.BasicBlock(fn, "entry")
-        builder = LLVM.IRBuilder()
-        try
-            LLVM.position!(builder, entry)
-            LLVM.ret!(builder, LLVM.mul!(builder, LLVM.parameters(fn)[1], LLVM.ConstantInt(i32, 3)))
-        finally
-            LLVM.dispose(builder)
+        LLVM.@dispose builder=LLVM.IRBuilder() begin
+            LLVM.position!(builder, LLVM.at_end(entry))
+            LLVM.ret!(builder, LLVM.mul!(builder, fn.parameters[1], LLVM.ConstantInt(i32, 3)))
         end
     end
 
@@ -398,7 +395,7 @@ end
     @test get_symbol_address(cc, "malloc") != 0
 
     # The dylib and the JIT are the JIT's, handed out for lookups rather than for disposal.
-    @test get_dylib(cc).ref == LLVM.JITDylib(get_jit(cc)).ref
+    @test get_dylib(cc).ref == get_jit(cc).main_dylib.ref
     dispose(cc)
 
     # And the default gets there without being asked.

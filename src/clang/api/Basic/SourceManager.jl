@@ -16,11 +16,14 @@ end
     FileID(src_mgr::SourceManager, buffer::MemoryBuffer)
 Create a file ID from a memory buffer.
 
-This function takes ownership of the memory buffer.
+This function takes ownership of the memory buffer, which lives as long as the source
+manager. The `buffer` wrapper stays usable while the source manager lives (e.g., to create a
+`Lexer`), but can't be handed over again, and disposing of it does nothing.
 """
 function FileID(src_mgr::SourceManager, buffer::LLVM.MemoryBuffer)
     @check_ptrs src_mgr
-    return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr, buffer.ref))
+    # nothing between handing over the buffer and the call can throw
+    return FileID(clang_SourceManager_createFileIDFromMemoryBuffer(src_mgr, LLVM.consume!(buffer; borrow=true)))
 end
 
 """
@@ -69,7 +72,8 @@ end
 
 """
     setMainFileID(src_mgr::SourceManager, buffer::MemoryBuffer)
-Set the main file ID of the source manager to `buffer`.
+Set the main file ID of the source manager to `buffer`, which it takes ownership of like
+`FileID(src_mgr, buffer)`.
 """
 function setMainFileID(src_mgr::SourceManager, buffer::LLVM.MemoryBuffer)
     id = FileID(src_mgr, buffer)
@@ -92,11 +96,15 @@ end
     overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef, buffer::LLVM.MemoryBuffer)
 Override the contents of the given source file with the buffer.
 
-This function takes ownership of the memory buffer.
+This function takes ownership of the memory buffer, which the source manager keeps until it
+is disposed of or the contents of the file are overridden again. Until then, the `buffer`
+wrapper stays usable (e.g., to create a `Lexer`), but it can't be handed over again, and
+disposing of it does nothing.
 """
 function overrideFileContents(src_mgr::SourceManager, entry::FileEntryRef, buffer::LLVM.MemoryBuffer)
     @check_ptrs src_mgr entry
-    return clang_SourceManager_overrideFileContents(src_mgr, entry, buffer)
+    # nothing between handing over the buffer and the call can throw
+    return clang_SourceManager_overrideFileContents(src_mgr, entry, LLVM.consume!(buffer; borrow=true))
 end
 function dump(x::SourceLocation, src_mgr::SourceManager)
     @check_ptrs src_mgr

@@ -47,7 +47,7 @@ end
 
 function ReleaseModule(x::CodeGenerator)
     @check_ptrs x
-    return LLVM.Module(clang_CodeGenerator_ReleaseModule(x))
+    return LLVM.adopt(LLVM.Module(clang_CodeGenerator_ReleaseModule(x)))
 end
 
 function GetDeclForMangledName(x::CodeGenerator, s::String)

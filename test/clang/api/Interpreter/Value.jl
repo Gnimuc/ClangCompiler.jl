@@ -150,11 +150,11 @@ using ClangCompiler: get_tag
         d = CC.get_decl(cg, "vi_cg_add")
         @test CC.getDeclKindName(d) == "Function"
         # mimic the incremental parser: release the current module, start a fresh one
-        llvm_ctx = CC.LLVM.context(mod)
+        llvm_ctx = mod.context
         released = CC.release_llvm_module(cg)
         @test released.ref == mod.ref
         started = CC.start_llvm_module(cg, llvm_ctx, "vi_cg_started")
-        @test CC.LLVM.name(started) == "vi_cg_started"
+        @test started.name == "vi_cg_started"
         CC.LLVM.dispose(released)  # release transfers ownership to us
         dispose(I)
     end
@@ -194,7 +194,7 @@ using ClangCompiler: get_tag
             act = CC.LLVMOnlyAction(llvm_ctx)
             @test CC.ExecuteAction(instance, act) == true
             m = CC.takeModule(act)
-            @test occursin("vi_act_fn", string(CC.LLVM.name.(collect(CC.LLVM.functions(m)))))
+            @test occursin("vi_act_fn", string([f.name for f in m.functions]))
             CC.LLVM.dispose(m)  # takeModule transfers ownership to us
             dispose(act)
             dispose(instance)

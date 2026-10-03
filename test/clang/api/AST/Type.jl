@@ -1131,8 +1131,9 @@ end
     @test aty isa CC.ConstantArrayType
     gv = CC.getSize(aty)
     @test gv != C_NULL
-    @test LLVM.API.LLVMGenericValueToInt(gv, false) == 7
-    LLVM.API.LLVMDisposeGenericValue(gv)
+    aty_size = LLVM.adopt(LLVM.GenericValue(gv))
+    @test convert(UInt64, aty_size) == 7
+    LLVM.dispose(aty_size)
     # The narrowed twin reads the same extent with no LLVM-C round trip and no disposal.
     @test CC.getZExtSize(aty) == 7
 

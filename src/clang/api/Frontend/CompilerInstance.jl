@@ -92,11 +92,15 @@ Create a file manager backed by an overlay VFS that exposes `pch_buffer` as an i
 file at `path` (so a PCH can be loaded without touching the disk). The compiler instance
 keeps ownership of the returned file manager.
 
-This function takes ownership of the memory buffer.
+This function takes ownership of the memory buffer: it can't be used afterwards, and
+disposing of it does nothing.
 """
 function createFileManagerWithVOFS4PCH(ci::CompilerInstance, path::AbstractString, mtime::Integer, pch_buffer::LLVM.MemoryBuffer)
     @check_ptrs ci
-    return FileManager(clang_CompilerInstance_createFileManagerWithVOFS4PCH(ci, path, mtime, pch_buffer))
+    # clang takes the buffer once it is called: convert the other arguments first, which can
+    # throw, and then hand the buffer over (which rejects one that was handed over already)
+    path, mtime = String(path), Int64(mtime)
+    return FileManager(clang_CompilerInstance_createFileManagerWithVOFS4PCH(ci, path, mtime, LLVM.consume!(pch_buffer)))
 end
 function getFileEntry(ci::CompilerInstance, filename::AbstractString, open_file::Bool=true)
     file_mgr = getFileManager(ci)

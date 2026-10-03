@@ -86,7 +86,7 @@ end
     before = CC.getModule(ptu)
     # the increment's own IR carries the variable it declared
     @test before !== nothing
-    @test occursin("ptu_exec_probe", string(LLVM.name.(collect(LLVM.globals(before)))))
+    @test occursin("ptu_exec_probe", string([gv.name for gv in before.globals]))
     # Execute hands the module to the JIT, so the increment no longer owns one
     @test isempty(CC.Execute(I.interp, ptu))
     @test CC.getModule(ptu) === nothing

@@ -20,18 +20,18 @@ const LX = CC.LibClangEx
     @test f(I, "cgabi_f")
     ft = LLVM.LLVMType(CC.convertFreeFunctionType(cgm, CC.FunctionDecl(get_decl(f))))
     @test ft isa LLVM.FunctionType
-    @test length(LLVM.parameters(ft)) == 2
+    @test length(ft.parameters) == 2
     # `int` is 32 bits on every target this suite runs on, and the two parameters keep
     # their source order
-    @test LLVM.width(LLVM.return_type(ft)) == 32
+    @test ft.return_type.width == 32
     @test string(ft) == "i32 (i32, double)"
 
     # the same sret decision CGFunctionInfo reports, seen in the IR type: the aggregate
     # return became a hidden pointer parameter and the function returns void
     @test f(I, "cgabi_ret")
     rt = LLVM.LLVMType(CC.convertFreeFunctionType(cgm, CC.FunctionDecl(get_decl(f))))
-    @test LLVM.return_type(rt) isa LLVM.VoidType
-    @test length(LLVM.parameters(rt)) == 1
+    @test rt.return_type isa LLVM.VoidType
+    @test length(rt.parameters) == 1
 
     dispose(f)
     dispose(I)
@@ -111,7 +111,7 @@ end
     cgm = CC.get_codegen_module(I)
     cg = CC.getCodeGen(I.interp)
     # the builder has to live in the context the attributes will be attached in
-    lctx = LLVM.context(CC.GetModule(cg))
+    lctx = CC.GetModule(cg).context
 
     ab = CC.AttrBuilder(lctx)
     @test CC.getNumAttributes(ab) == 0
@@ -132,7 +132,7 @@ end
     @test CC.applyToFunction(ab, fn)
     # clang already put these on the function it emitted, so applying them again cannot
     # remove any: the function ends up with at least what the builder holds
-    @test length(LLVM.function_attributes(fn)) >= n
+    @test length(fn.function_attributes) >= n
 
     # a global variable takes no function attributes, and the shim refuses rather than
     # casting a non-function to llvm::Function

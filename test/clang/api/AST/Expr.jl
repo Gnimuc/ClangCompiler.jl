@@ -62,6 +62,7 @@ end
     @test newil.ptr != C_NULL
     @test CC.getLocation(newil).ptr == CC.getLocation(il).ptr
     @test CC.getType(newil).ptr == ity.ptr
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(gv)))  # IntegerLiteral copies the value
 
     # ---- Setters: round-trip through the paired getters ----------------------
     loc_a = CC.getLocation(il)      # a valid SourceLocation
@@ -229,7 +230,9 @@ end
     api_.ptr != C_NULL && dispose(api_)
 
     # ---- IntegerLiteral ------------------------------------------------------
-    @test CC.getValue(il) !== nothing
+    il_val = CC.getValue(il)
+    @test il_val !== nothing
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(il_val)))
     @test !CC.is_null_handle(CC.getBeginLoc(il))
     @test !CC.is_null_handle(CC.getEndLoc(il))
     @test !CC.is_null_handle(CC.getLocation(il))
@@ -238,7 +241,9 @@ end
     fl = first_of(CC.FloatingLiteral)
     @test fl !== nothing
     @test CC.getValueAsApproximateDouble(fl) == 1.5
-    @test CC.EvaluateAsFloat(fl, ctx) !== nothing
+    fl_val = CC.EvaluateAsFloat(fl, ctx)
+    @test fl_val !== nothing
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(fl_val)))
 
     # ---- CharacterLiteral ----------------------------------------------------
     chl = first_of(CC.CharacterLiteral)
@@ -559,9 +564,11 @@ end
 
     # integer folding: the three APSInt bridges all hand back an owned GenericValue
     @test CC.isIntegerConstantExpr(il, ctx)
-    @test CC.getIntegerConstantExpr(il, ctx) != C_NULL
-    @test CC.EvaluateKnownConstInt(il, ctx) != C_NULL
-    @test CC.EvaluateKnownConstIntCheckOverflow(il, ctx) != C_NULL
+    for il_val in (CC.getIntegerConstantExpr(il, ctx), CC.EvaluateKnownConstInt(il, ctx),
+                   CC.EvaluateKnownConstIntCheckOverflow(il, ctx))
+        @test il_val != C_NULL
+        CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(il_val)))
+    end
 
     apv = CC.EvaluateAsConstantExpr(il, ctx, LX.CXExpr_ConstantExprKind_Normal)
     @test apv isa CC.APValue
@@ -649,7 +656,9 @@ end
     fls = filter(n -> n isa CC.FloatingLiteral, nodes)
     @test !isempty(fls)
     fl = first(fls)
-    @test CC.getValue(fl) != C_NULL
+    fl_val = CC.getValue(fl)
+    @test fl_val != C_NULL
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(fl_val)))
     @test CC.isExact(fl)
     flloc = CC.getLocation(fl)
     CC.setLocation(fl, flloc)
@@ -1409,8 +1418,9 @@ end
     @test CC.getNumSubExprs(sve) == 6
     mask0 = CC.getShuffleMaskIdx(sve, ctx, 0)
     @test mask0 != C_NULL
-    @test CC.LLVM.API.LLVMGenericValueToInt(mask0, false) == 3
-    CC.LLVM.API.LLVMDisposeGenericValue(mask0)
+    mask0_gv = CC.LLVM.adopt(CC.LLVM.GenericValue(mask0))
+    @test convert(UInt64, mask0_gv) == 3
+    CC.LLVM.dispose(mask0_gv)
     @test_throws AssertionError CC.getShuffleMaskIdx(sve, ctx, 4)
 
     # ---- ExtVectorElementExpr: the encoded accessor --------------------------
@@ -1435,8 +1445,9 @@ end
     @test ail isa CC.ArrayInitLoopExpr
     sz = CC.getArraySize(ail)
     @test sz != C_NULL
-    @test CC.LLVM.API.LLVMGenericValueToInt(sz, false) == 3
-    CC.LLVM.API.LLVMDisposeGenericValue(sz)
+    sz_gv = CC.LLVM.adopt(CC.LLVM.GenericValue(sz))
+    @test convert(UInt64, sz_gv) == 3
+    CC.LLVM.dispose(sz_gv)
 
     # ---- Designator::getSourceRange -----------------------------------------
     # the designators live on the syntactic form, which `subtree` does not walk
@@ -2142,7 +2153,7 @@ end
     @test apv isa CC.APValue
     @test apv.ptr != C_NULL
     @test CC.getKind(apv) == LX.CXAPValueKind_Int
-    gv = CC.LLVM.GenericValue(CC.getInt(apv))
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(apv)))
     @test convert(Int, gv) == 21
     CC.LLVM.dispose(gv)
     CC.dispose(apv)
@@ -2157,7 +2168,7 @@ end
     @test subst isa CC.APValue
     @test subst.ptr != C_NULL
     @test CC.getKind(subst) == LX.CXAPValueKind_Int
-    gv2 = CC.LLVM.GenericValue(CC.getInt(subst))
+    gv2 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getInt(subst)))
     @test convert(Int, gv2) == 42
     CC.LLVM.dispose(gv2)
     CC.dispose(subst)
@@ -2483,7 +2494,7 @@ end
     @test bits != C_NULL
     CC.setValue(fl, ctx, bits)
     @test CC.getValueAsApproximateDouble(fl) == approx
-    CC.LLVM.API.LLVMDisposeGenericValue(bits)
+    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(bits)))
 
     # ---- Expr::EvaluateAsFixedPoint -----------------------------------------
     il = pick(CC.IntegerLiteral)
