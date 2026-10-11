@@ -227,8 +227,23 @@ end
     addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString, to::LLVM.MemoryBuffer)
 Give the file `from` the contents of `to`.
 
-The buffer is borrowed and must outlive the compiler instance that reads it;
-[`getRetainRemappedFileBuffers`](@ref) decides whether that instance frees it.
+The options store the address of `to` and nothing else: this call moves no ownership, the
+`to` wrapper is left as it was, and the buffer must stay alive until every compiler instance
+that reads it is gone. Who frees it is settled later, inside clang, when an instance sets up
+its file remapping (`createPreprocessor`, which a frontend action runs as it begins its
+source file):
+
+- with [`getRetainRemappedFileBuffers`](@ref) false, clang's default, that instance's
+  `SourceManager` takes the buffer and frees it when the instance is disposed of. Say so
+  with `LLVM.consume!(to; borrow=true)`: `to` then stays readable while the instance lives
+  and `LLVM.dispose(to)` does nothing. Disposing of `to` without it is a second free.
+- with it true, the instance only reads the buffer, which stays the caller's to
+  `LLVM.dispose` once the instance is gone.
+
+An `ASTUnit` built from the invocation frees the buffers when it is disposed of, whatever
+the flag is, unless [`setOwnsRemappedFileBuffers`](@ref) turned that off; hand `to` over
+the same way there. [`LoadFromCompilerInvocation`](@ref) also raises the flag before it
+parses, so the instance it parses with leaves the buffers to the unit.
 """
 function addRemappedFile(x::AbstractPreprocessorOptions, from::AbstractString, to::LLVM.MemoryBuffer)
     @check_ptrs x
