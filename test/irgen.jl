@@ -407,6 +407,46 @@ end
     dispose(linked)
 end
 
+@testset "CxxCompiler | an out-of-order dispose is refused before anything is freed" begin
+    # Two compilers stack two LLVM contexts and only the innermost can be popped, so disposing
+    # the outer one first has to fail. It has to fail *whole*: a `dispose` that raised after
+    # freeing the JIT would leave a compiler that can be neither used nor disposed again.
+    top() = (c=LLVM.ts_context(; throw_error=false); c === nothing ? nothing : c.ref)
+    before = top()
+    outer = create_compiler("""extern "C" int irg_outer() { return 11; }""")
+    inner = create_compiler("""extern "C" int irg_inner() { return 22; }""")
+    compile(outer)
+    compile(inner)
+
+    # The message is asserted rather than the type: LLVM.jl raises an `ErrorException` of its
+    # own when a context that is not innermost is popped, and that one comes after the frees.
+    refused = @test_throws "dispose out of order" dispose(outer)
+    refused isa Test.Pass || return     # `outer` is in pieces, and nothing below is safe on it
+    # ... and `outer` still has its JIT, which resolves and runs what it compiled
+    @test ccall(get_function_pointer(outer, "irg_outer"), Cint, ()) == 11
+
+    dispose(inner)
+    dispose(outer)
+    @test top() === before
+end
+
+@testset "IRGenerator | an out-of-order dispose is refused before anything is freed" begin
+    # The same refusal one layer down, with the message asserted for the same reason.
+    top() = (c=LLVM.ts_context(; throw_error=false); c === nothing ? nothing : c.ref)
+    before = top()
+    outer = create_irgenerator("""extern "C" int irg_gen_outer() { return 1; }""")
+    inner = create_irgenerator("""extern "C" int irg_gen_inner() { return 2; }""")
+
+    refused = @test_throws "dispose out of order" dispose(outer)
+    refused isa Test.Pass || return     # `outer` is in pieces, and nothing below is safe on it
+    # ... and `outer` still holds the module it compiled
+    @test has_module(outer)
+
+    dispose(inner)
+    dispose(outer)
+    @test top() === before
+end
+
 @testset "CxxCompiler | a failing snippet leaves nothing to dispose" begin
     buf = CC.TextDiagnosticBuffer()
     @test_throws ErrorException create_compiler("int irg_broken() { return irg_nope; }"; diag_consumer=buf)

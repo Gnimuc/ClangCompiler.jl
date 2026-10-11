@@ -157,6 +157,10 @@ function get_function_pointer(x::CxxCompiler, name::AbstractString)
 end
 
 function dispose(x::CxxCompiler)
+    # Checked before the JIT is freed, for the reason `dispose(::IRGenerator)` checks before its
+    # own frees: raised after, an out-of-order dispose would leave a compiler whose JIT is gone
+    # and which can be neither used nor disposed again.
+    check_dispose_order(x.irgen)
     LLVM.dispose(x.jit)      # before the context the modules it holds were emitted in
     return dispose(x.irgen)
 end
