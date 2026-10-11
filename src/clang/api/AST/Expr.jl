@@ -81,8 +81,8 @@ end
 
 """
     getValue(x::AbstractIntegerLiteral)
-Return the value as a caller-owned `LLVMGenericValueRef` (release via LLVM-C's
-`LLVMDisposeGenericValue`; no Julia `dispose` method exists for it).
+Return the value as a caller-owned `LLVMGenericValueRef` (wrap it with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
 """
 function getValue(x::AbstractIntegerLiteral)
     @check_ptrs x
@@ -504,7 +504,8 @@ function EvaluateAsInt(x::AbstractExpr, ctx::ASTContext)
     return APValue(clang_Expr_EvaluateAsInt(x, ctx))
 end
 
-# Folded float bits as a caller-owned LLVMGenericValueRef (release via LLVM-C),
+# Folded float bits as a caller-owned LLVMGenericValueRef (wrap it with
+# `LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`),
 # or C_NULL when `x` is not a floating constant.
 function EvaluateAsFloat(x::AbstractExpr, ctx::ASTContext)
     @check_ptrs x ctx
@@ -1141,8 +1142,8 @@ end
 """
     getIntegerConstantExpr(x::AbstractExpr, ctx::ASTContext)
 Fold `x` to an integer constant expression, returning the value as a caller-owned
-`LLVMGenericValueRef` (release via LLVM-C's `LLVMDisposeGenericValue`), or `C_NULL`
-when `x` is not an integer constant expression.
+`LLVMGenericValueRef` (wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release that
+with `LLVM.dispose`), or `C_NULL` when `x` is not an integer constant expression.
 """
 function getIntegerConstantExpr(x::AbstractExpr, ctx::ASTContext)
     @check_ptrs x ctx
@@ -1151,7 +1152,8 @@ end
 
 """
     EvaluateKnownConstInt(x::AbstractExpr, ctx::ASTContext)
-Return the folded integer as a caller-owned `LLVMGenericValueRef` (release via LLVM-C).
+Return the folded integer as a caller-owned `LLVMGenericValueRef` (wrap it with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
 `x` must already be known to fold to an integer — check with
 [`isIntegerConstantExpr`](@ref) first.
 """
@@ -1436,8 +1438,9 @@ end
 # ConstantExpr
 """
     getResultAsAPSInt(x::AbstractConstantExpr)
-Return the stored integral result as a caller-owned `LLVMGenericValueRef` (release via
-LLVM-C's `LLVMDisposeGenericValue`). Requires an integral stored result.
+Return the stored integral result as a caller-owned `LLVMGenericValueRef` (wrap it with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`). Requires an
+integral stored result.
 """
 function getResultAsAPSInt(x::AbstractConstantExpr)
     @check_ptrs x
@@ -1460,7 +1463,8 @@ end
 """
     getValue(x::AbstractFloatingLiteral)
 Return the exact value's bit pattern (`APFloat::bitcastToAPInt`) as a caller-owned
-`LLVMGenericValueRef` (release via LLVM-C's `LLVMDisposeGenericValue`).
+`LLVMGenericValueRef` (wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release that
+with `LLVM.dispose`).
 """
 function getValue(x::AbstractFloatingLiteral)
     @check_ptrs x
@@ -2561,7 +2565,8 @@ end
 """
     getShuffleMaskIdx(x::AbstractShuffleVectorExpr, ctx::ASTContext, n) -> LLVMGenericValueRef
 Return mask entry `n` of the shuffle `x` as a caller-owned `LLVMGenericValueRef` (an
-`APSInt` in `GV->IntVal`, released via LLVM-C's `LLVMDisposeGenericValue`).
+`APSInt` in `GV->IntVal`; wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release
+that with `LLVM.dispose`).
 
 The mask starts after the two vector operands, so `n` must be below
 `getNumSubExprs(x) - 2`; upstream asserts that bound.
@@ -2603,8 +2608,8 @@ end
 """
     getArraySize(x::AbstractArrayInitLoopExpr) -> LLVMGenericValueRef
 Return the number of elements the loop initializes, as a caller-owned
-`LLVMGenericValueRef` (an `APInt` in `GV->IntVal`, released via LLVM-C's
-`LLVMDisposeGenericValue`).
+`LLVMGenericValueRef` (an `APInt` in `GV->IntVal`; wrap it with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
 
 Upstream reaches the extent through an unchecked
 `cast<ConstantArrayType>(getType()->castAsArrayTypeUnsafe())`; that precondition is
