@@ -230,9 +230,10 @@ end
     api_.ptr != C_NULL && dispose(api_)
 
     # ---- IntegerLiteral ------------------------------------------------------
-    il_val = CC.getValue(il)
-    @test il_val !== nothing
-    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(il_val)))
+    il_gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.getValue(il)))
+    @test convert(Int, il_gv) == 1                               # the `1` of `{1, 2, 3}`
+    @test il_gv.intwidth == CC.getIntWidth(ctx, CC.getType(il))  # an APInt at the literal's own type width
+    CC.LLVM.dispose(il_gv)
     @test !CC.is_null_handle(CC.getBeginLoc(il))
     @test !CC.is_null_handle(CC.getEndLoc(il))
     @test !CC.is_null_handle(CC.getLocation(il))
@@ -241,9 +242,11 @@ end
     fl = first_of(CC.FloatingLiteral)
     @test fl !== nothing
     @test CC.getValueAsApproximateDouble(fl) == 1.5
-    fl_val = CC.EvaluateAsFloat(fl, ctx)
-    @test fl_val !== nothing
-    CC.LLVM.dispose(CC.LLVM.adopt(CC.LLVM.GenericValue(fl_val)))
+    fl_gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.EvaluateAsFloat(fl, ctx)))
+    @test fl_gv.intwidth == 64                                   # `1.5` is a double: IEEE binary64 bits
+    @test reinterpret(Float64, convert(UInt64, fl_gv)) == 1.5
+    CC.LLVM.dispose(fl_gv)
+    @test CC.EvaluateAsFloat(il, ctx) == C_NULL                  # an integer literal is not a floating constant
 
     # ---- CharacterLiteral ----------------------------------------------------
     chl = first_of(CC.CharacterLiteral)

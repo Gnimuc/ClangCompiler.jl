@@ -394,8 +394,10 @@ end
     @test link_process_symbols(cc) === cc
     @test get_symbol_address(cc, "malloc") != 0
 
-    # The dylib and the JIT are the JIT's, handed out for lookups rather than for disposal.
-    @test get_dylib(cc).ref == get_jit(cc).main_dylib.ref
+    # The dylib and the JIT are the JIT's, handed out for lookups rather than for disposal --
+    # and the dylib is the one the compiled code went into: a lookup confined to it finds the
+    # function at the address the compiler reports.
+    @test pointer(LLVM.lookup(get_jit(cc), get_dylib(cc), "irg_uses_new")) == get_function_pointer(cc, "irg_uses_new")
     dispose(cc)
 
     # And the default gets there without being asked.

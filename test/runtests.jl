@@ -176,4 +176,4 @@ include("clang/api/Tooling/Syntax/Tokens.jl")
 include("irgen.jl")
 include("execution.jl")
 
-# include("llvm/pointer_from_objref.jl")
+include("llvm/pointer_from_objref.jl")

@@ -46,11 +46,8 @@ struct Buffer {
 
 banner(t) = println("\n", "=" ^ 86, "\n  ", t, "\n", "=" ^ 86)
 
-# The LLVM context is needed only to build the constant for a non-type argument: clang stores
-# those as `llvm::APSInt`, and this package spells them as LLVM generic values. Both it and the
-# interpreter are created out here so the `finally` at the bottom disposes them on every path.
+# The interpreter is created out here so the `finally` at the bottom disposes it on every path.
 I = CC.create_interpreter(String[])
-llctx = LLVM.Context()
 try
     CC.parse(I, CPP)
 
@@ -348,7 +345,7 @@ try
     println("""
       * A class template is a pattern; a `ClassTemplateSpecializationDecl` is what running
         that pattern on concrete arguments produces.
-      * `CC.specialize(llvm_ctx, ast_ctx, template_decl, args...)` builds and registers the
+      * `CC.specialize(ast_ctx, template_decl, args...)` builds and registers the
         declaration. Type arguments are clang `Type`s (`jlty_to_clty` bridges Julia's);
         non-type arguments are Julia integers and bools.
       * That call alone leaves the record *incomplete*. `Sema` does the substitution:
@@ -365,8 +362,7 @@ try
         needs can be computed at runtime — from a config file, a benchmark sweep, a set of
         Julia types — instead of being written out by hand in C++.""")
 finally
-    # Create -> use -> dispose, in reverse order of creation. The interpreter owns the
-    # ASTContext, Sema and the JIT, so every carrier obtained above dangles after this line.
-    LLVM.dispose(llctx)
+    # Create -> use -> dispose. The interpreter owns the ASTContext, Sema and the JIT, so every
+    # carrier obtained above dangles after this line.
     CC.dispose(I)
 end
