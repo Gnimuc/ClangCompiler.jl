@@ -42,7 +42,8 @@ end
 
 function GetModule(x::CodeGenerator)
     @check_ptrs x
-    return LLVM.Module(clang_CodeGenerator_GetModule(x))
+    # borrowed: the code generator owns the module, so memcheck does not track this wrapper
+    return LLVM.mark_untracked(LLVM.Module(clang_CodeGenerator_GetModule(x)))
 end
 
 function ReleaseModule(x::CodeGenerator)
@@ -129,5 +130,6 @@ end
 function StartModule(x::CodeGenerator, ctx::LLVM.Context, mod_name::String)
     @check_ptrs x
     @assert ctx.ref != C_NULL "LLVMContextRef has a NULL pointer."
-    return LLVM.Module(clang_CodeGenerator_StartModule(x, ctx, mod_name))
+    # borrowed: the code generator owns the module, so memcheck does not track this wrapper
+    return LLVM.mark_untracked(LLVM.Module(clang_CodeGenerator_StartModule(x, ctx, mod_name)))
 end
