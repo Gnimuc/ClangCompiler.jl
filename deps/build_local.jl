@@ -52,9 +52,10 @@ function build_clangex(cmake_path)
     config_opts = `-DLLVM_DIR=$(LLVM_DIR) -DClang_DIR=$(Clang_DIR) -DCMAKE_INSTALL_PREFIX=$(scratch_dir)`
     if Sys.iswindows()
         # An msys2 gcc is newer than the runtime julia.exe ships, and a dynamic
-        # libclangex.dll binds julia's older copies by name at load -- the skew that
-        # deadlocked the Windows loader. BinaryBuilder builds never set this: their
-        # curated GCC is older than julia's runtime, the supported direction.
+        # libclangex.dll binds julia's older libstdc++ and libgcc by name at load, which
+        # is the direction that does not work. BinaryBuilder builds never set this: their
+        # curated GCC is older than julia's runtime, the supported direction. winpthread
+        # is julia's either way; the option's comment in CMakeLists.txt says why.
         config_opts = `$config_opts -DCLANGEX_STATIC_GCC_RUNTIME=ON`
     end
     if Sys.iswindows()
@@ -85,6 +86,31 @@ built_libs = filter(readdir(joinpath(scratch_dir, "lib"))) do file
 end
 lib_path = joinpath(scratch_dir, "lib", only(built_libs))
 isfile(lib_path) || error("Could not find library $lib_path in build directory")
+
+# The loader reuses the runtime DLLs julia has already loaded from its own bin directory,
+# ahead of anything msys2 has, so an import library can promise at link time a name that
+# the DLL julia loaded does not have: winpthreads' `*64` time functions, say, which its
+# headers have redirected every timed call to since mingw-w64 13 and which the copy built
+# from mingw-w64 v11.0.1 lacks. That surfaces inside `using ClangCompiler`, under a loader
+# that names nothing; this names it, and fails the build. A LocalPreferences.toml written
+# by an earlier build names this same path, so a library that fails is removed rather than
+# left there for it to load.
+if Sys.iswindows()
+    include("pe.jl")
+    try
+        check_imports(lib_path)
+        # CLANGEX_STATIC_GCC_RUNTIME links libgcc and libstdc++ into the library itself; an
+        # import of either DLL means it did not, and the loader would bind julia's older copies.
+        imported = lowercase.(collect(keys(pe_imports(lib_path))))
+        for dll in ("libstdc++-6.dll", "libgcc_s_seh-1.dll")
+            dll in imported &&
+                error("$(basename(lib_path)) imports $dll; CLANGEX_STATIC_GCC_RUNTIME did not take effect")
+        end
+    catch
+        rm(lib_path; force=true)
+        rethrow()
+    end
+end
 
 # tell ClangCompiler.jl to load our library instead of the default artifact one
 set_preferences!(joinpath(dirname(@__DIR__), "LocalPreferences.toml"), "ClangCompiler", "libclangex" => lib_path;

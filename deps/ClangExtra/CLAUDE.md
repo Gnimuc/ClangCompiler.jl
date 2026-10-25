@@ -424,4 +424,7 @@ are never installed.
    The recipe must leave `CLANGEX_STATIC_GCC_RUNTIME` off. It exists for local msys2 builds,
    whose GCC is newer than the runtime DLLs julia ships, so the loader would bind
    `libclangex.dll` to julia's older copies; BinaryBuilder's GCC is older than julia's, which
-   is the direction that works.
+   is the direction that works. It covers libgcc and libstdc++ only: winpthread is julia's
+   in every build, because mutex handles cross the libclang-cpp boundary and winpthreads'
+   layout behind them is not stable across revisions (the option's comment in
+   CMakeLists.txt).
