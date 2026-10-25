@@ -2339,8 +2339,8 @@ end
 """
     MakeIntValue(x::ASTContext, value::Integer, ty::QualType) -> LLVMGenericValueRef
 Return `value` as an `APSInt` of `ty`'s width and signedness, boxed in a caller-owned
-`LLVMGenericValueRef` (release via LLVM-C's `LLVMDisposeGenericValue`; no Julia `dispose`
-method exists for it). `ty` must be a complete integral or enumeration type.
+`LLVMGenericValueRef` (wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release that
+with `LLVM.dispose`). `ty` must be a complete integral or enumeration type.
 """
 function MakeIntValue(x::ASTContext, value::Integer, ty::QualType)
     @check_ptrs x

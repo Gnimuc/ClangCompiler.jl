@@ -3205,8 +3205,8 @@ end
 # EnumConstantDecl
 """
     getInitVal(x::AbstractEnumConstantDecl)
-Return the enumerator's value as a caller-owned `LLVMGenericValueRef` (release
-via LLVM-C's `LLVMDisposeGenericValue`; no Julia `dispose` method exists for it).
+Return the enumerator's value as a caller-owned `LLVMGenericValueRef` (wrap it with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
 Use [`getEnumConstantDeclValue`](@ref) for the narrowed form, which needs no disposal.
 """
 function getInitVal(x::AbstractEnumConstantDecl)
@@ -3288,8 +3288,8 @@ end
 """
     getValueRange(x::AbstractEnumDecl) -> (max, min)
 Return the `[min, max)` value range the enumeration can store, as two
-caller-owned `LLVMGenericValueRef`s (release via LLVM-C's
-`LLVMDisposeGenericValue`; no Julia `dispose` method exists for them).
+caller-owned `LLVMGenericValueRef`s (wrap each with
+`LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
 """
 function getValueRange(x::AbstractEnumDecl)
     @check_ptrs x

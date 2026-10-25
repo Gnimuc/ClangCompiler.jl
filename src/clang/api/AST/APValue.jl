@@ -26,7 +26,8 @@ end
 
 # Integer/float leaves come back as an LLVM GenericValue (the APInt is in its
 # IntVal field; getFloat stores the exact float bits via APFloat::bitcastToAPInt).
-# The GenericValue is caller-owned — release it via LLVM-C after use.
+# The GenericValue is caller-owned — wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and
+# release that with `LLVM.dispose` after use.
 #
 # Every accessor below gates on the kind, because clang's own `assert(isInt())` and its
 # siblings are compiled out of the release libclang-cpp: an APValue is a tagged union, so a
@@ -218,7 +219,7 @@ end
 
 # The halves of a complex value. Each comes back as an LLVM GenericValue like
 # `getInt`/`getFloat` (the float halves carry the exact bits via
-# `APFloat::bitcastToAPInt`); the GenericValue is caller-owned.
+# `APFloat::bitcastToAPInt`); the GenericValue is caller-owned and released the same way.
 # `APValue::getComplexIntReal` and friends assert their kind.
 function getComplexIntReal(x::APValue)
     @check_ptrs x
@@ -330,10 +331,10 @@ end
     toIntegralConstant(x::APValue, src_ty::QualType, ctx::ASTContext) -> LLVMGenericValueRef
 Convert the value to an integral constant when it is an integer, a null pointer, or an
 offset from a null pointer, and return it as a caller-owned `LLVMGenericValueRef`
-(release via LLVM-C's `LLVMDisposeGenericValue`). The result is `C_NULL` when the value
-is none of those. `src_ty` must be the type the value was evaluated at: the two lvalue
-paths feed it to `getTargetNullPointerValue`/`MakeIntValue`, which need a complete
-pointer or integral type, while the integer path ignores it entirely.
+(wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release that with `LLVM.dispose`).
+The result is `C_NULL` when the value is none of those. `src_ty` must be the type the value
+was evaluated at: the two lvalue paths feed it to `getTargetNullPointerValue`/`MakeIntValue`,
+which need a complete pointer or integral type, while the integer path ignores it entirely.
 """
 function toIntegralConstant(x::APValue, src_ty::QualType, ctx::ASTContext)
     @check_ptrs x src_ty ctx

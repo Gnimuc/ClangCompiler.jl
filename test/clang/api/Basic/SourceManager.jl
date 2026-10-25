@@ -102,8 +102,8 @@ using Test
     @test mod isa CC.LLVM.Module
     @test !CC.is_null_handle(CC.GetDeclForMangledName(cg, "add_two"))
 
-    # ReleaseModule / StartModule mutate the codegen's module ownership; run them on a
-    # throwaway interpreter and leave it undisposed to avoid an ownership double-free.
+    # ReleaseModule / StartModule mutate the codegen's module ownership, so they run on a
+    # throwaway interpreter rather than on the one the assertions above read from.
     J = create_interpreter(String[])
     CC.parse(J, "extern \"C\" int jf(int x) { return x + 1; }")
     cgJ = CC.getCodeGen(J.interp)
@@ -112,6 +112,7 @@ using Test
     newmod = CC.StartModule(cgJ, relmod.context, "cov_module")
     @test newmod isa CC.LLVM.Module
     CC.LLVM.dispose(relmod)  # ReleaseModule transfers ownership to us
+    dispose(J)               # after `relmod`: J's LLVM context deletes the modules still in it
 
     dispose(f)
     dispose(I)

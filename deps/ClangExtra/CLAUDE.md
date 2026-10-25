@@ -317,16 +317,17 @@ new code by:
   exceptions are getters forced to heap-box a by-value C++ return —
   `clang_FileManager_getFileRef` (→ `clang_FileEntryRef_dispose`),
   `clang_SourceManager_getMainFileID` (→ `clang_FileID_dispose`) — and
-  `clang_FileManager_getBufferForFile`, which hands the caller an owned
-  `LLVMMemoryBufferRef`.
+  `clang_FileManager_getBufferForFile` and `clang_ASTUnit_getBufferForFile`, which hand the
+  caller an owned `LLVMMemoryBufferRef`.
 - **Adoption overrides dispose.** Once an object is handed to an owning Clang API, its
   `_dispose` becomes a double free: `clang_Interpreter_create` consumes the
   CompilerInstance (even on failure); `setInvocation`/`setPreprocessor` wrap the raw
   handle in a fresh `shared_ptr`; `setASTConsumer` in a `unique_ptr`;
   `clang_DiagnosticsEngine_create` adopts the IDs/Options (and the consumer iff
   `ShouldOwnClient`); `clang_TargetInfo_CreateTargetInfo` absorbs the TargetOptions;
-  `createFileIDFromMemoryBuffer`/`overrideFileContents`/`createFileManagerWithVOFS4PCH`
-  consume the `LLVMMemoryBufferRef`.
+  `createFileIDFromMemoryBuffer`/`overrideFileContents`/`createFileManagerWithVOFS4PCH`/
+  `clang_InMemoryFileSystem_addFile` consume the `LLVMMemoryBufferRef` (`addFile` frees it
+  at once when the path already holds other contents).
 - C++ objects returned **by value** with no pointer encoding (FileEntryRef, FileID,
   TemplateArgument) are heap-boxed with make_unique/release and get an explicit dispose —
   flag this in a header comment. Most AST wrappers hand back ASTContext-arena memory and have
@@ -423,4 +424,7 @@ are never installed.
    The recipe must leave `CLANGEX_STATIC_GCC_RUNTIME` off. It exists for local msys2 builds,
    whose GCC is newer than the runtime DLLs julia ships, so the loader would bind
    `libclangex.dll` to julia's older copies; BinaryBuilder's GCC is older than julia's, which
-   is the direction that works.
+   is the direction that works. It covers libgcc and libstdc++ only: winpthread is julia's
+   in every build, because mutex handles cross the libclang-cpp boundary and winpthreads'
+   layout behind them is not stable across revisions (the option's comment in
+   CMakeLists.txt).

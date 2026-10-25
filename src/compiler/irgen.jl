@@ -324,16 +324,24 @@ rather than offering a module whose context is gone.
 """
 has_module(x::IRGenerator) = !x.taken[]
 
+# Raise unless `x`'s LLVM context is the innermost one still open, the only state `dispose` can
+# pop it from. `dispose(::IRGenerator)` and `dispose(::CxxCompiler)` both call this before their
+# first free.
+function check_dispose_order(x::IRGenerator)
+    top = LLVM.ts_context(; throw_error=false)
+    top !== nothing && top.ref == x.ts_ctx.ref ||
+        error("dispose out of order: this generator's LLVM context is not the innermost one \
+               still open. Generators and compilers must be disposed in reverse creation order.")
+    return nothing
+end
+
 function dispose(x::IRGenerator)
     # The context pop has to be *checked* first even though it happens last. LLVM.jl errors
     # when the context being disposed is not the top of its task-local stack, and raising that
     # after the three irreversible frees below would leave an object that can be neither used
     # nor disposed again, with its context wedged on the stack forever. Checking up front turns
     # an out-of-order dispose into a no-op that says so.
-    top = LLVM.ts_context(; throw_error=false)
-    top !== nothing && top.ref == x.ts_ctx.ref ||
-        error("dispose out of order: this generator's LLVM context is not the innermost one \
-               still open. Generators and compilers must be disposed in reverse creation order.")
+    check_dispose_order(x)
     dispose(x.act)                 # frees the module too, unless `take_module` moved it out
     dispose(x.instance)            # before the buffer its SourceManager points at
     LLVM.dispose(x.buffer)

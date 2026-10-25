@@ -25,5 +25,5 @@ documented state of the increment into an error.
 function getModule(x::AbstractPartialTranslationUnit)
     @check_ptrs x
     m = clang_PartialTranslationUnit_getModule(x)
-    return m == C_NULL ? nothing : LLVM.Module(m)
+    return m == C_NULL ? nothing : LLVM.mark_untracked(LLVM.Module(m))
 end

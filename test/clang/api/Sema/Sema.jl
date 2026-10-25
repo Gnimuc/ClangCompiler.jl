@@ -3081,9 +3081,7 @@ end
     # --- A member initializer built from a literal the test itself makes.
     # IntegerLiteral::Create takes the APInt through the LLVMGenericValueRef bridge
     # (MARSHALLING.md §1), not a Julia integer, so the value is built as one first.
-    gv = CC.LLVM.Context() do _
-        CC.LLVM.GenericValue(CC.LLVM.Int32Type(), 5)
-    end
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.MakeIntValue(ctx, 5, CC.getType(without_init))))
     literal = CC.IntegerLiteral(ctx, gv, CC.getType(without_init), loc)
     meminit = CC.BuildMemberInitializer(sema, without_init, literal, loc)
     @test meminit isa CC.CXXCtorInitializer
@@ -4358,9 +4356,8 @@ end
 
     # IntegerLiteral::Create takes the APInt through the LLVMGenericValueRef bridge
     # (MARSHALLING.md §1), so the value is built as an LLVM generic value first.
-    gv, gv7 = CC.LLVM.Context() do _
-        CC.LLVM.GenericValue(CC.LLVM.Int32Type(), 42), CC.LLVM.GenericValue(CC.LLVM.Int32Type(), 7)
-    end
+    gv = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.MakeIntValue(ctx, 42, int_ty)))
+    gv7 = CC.LLVM.adopt(CC.LLVM.GenericValue(CC.MakeIntValue(ctx, 7, int_ty)))
     lit = CC.IntegerLiteral(ctx, gv, int_ty, loc)
     lit7 = CC.IntegerLiteral(ctx, gv7, int_ty, loc)
     @test lit isa CC.IntegerLiteral

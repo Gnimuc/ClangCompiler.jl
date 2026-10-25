@@ -69,19 +69,27 @@ target_compile_definitions(clangex PUBLIC "__STDC_CONSTANT_MACROS" "__STDC_FORMA
 # BinaryBuilder build is safe with that: its curated GCC shards are older than julia's
 # bundled runtime, and old-binary-on-newer-runtime is the supported direction -- so the
 # Yggdrasil recipe must NOT set this, and the default stays the ecosystem's dynamic
-# linkage. An msys2 build inverts it (gcc 16.1 today against julia's older runtime), and
-# two generations of winpthread/libstdc++ TLS and once-machinery in one process is
-# loader-deadlock territory; deps/build_local.jl therefore turns this on for Windows.
-# Static linking is sound here: x86_64 SEH unwinding keeps no cross-module state, so
-# per-module unwind tables work, and no C++ exception crosses this library's C boundary
-# by contract. winpthread needs --whole-archive because its initialization otherwise
-# rides on the DLL's attach hooks; -Bdynamic restores the default before the
-# LLVM/clang-cpp import libraries resolve.
-option(CLANGEX_STATIC_GCC_RUNTIME "Link the gcc runtime statically (mingw only)" OFF)
+# linkage. An msys2 build inverts it (gcc 16 today against the gcc 15 runtime julia
+# ships), and a newer libstdc++'s inline code over an older libstdc++-6.dll is the
+# direction that does not work; deps/build_local.jl therefore turns this on for Windows.
+# Static libgcc and libstdc++ are sound here: x86_64 SEH unwinding keeps no cross-module
+# state, so per-module unwind tables work, and no C++ exception crosses this library's C
+# boundary by contract.
+#
+# winpthread is NOT part of it, and must not be. A pthread_mutex_t is a handle to state
+# that winpthreads keeps in a layout of its own, which changes between revisions, and
+# such handles cross the DLL boundary: a clang class with a std::mutex member and an
+# inline destructor (the dependency scanner's file cache, for one) is constructed and
+# locked inside libclang-cpp.dll and destroyed here. A static winpthreads in this
+# library would therefore read, with one revision's code, what julia's libwinpthread-1.dll
+# allocated under another's layout. Both libraries have to call the same winpthreads,
+# which is the one libclang-cpp.dll already binds: julia's. gcc's posix thread model
+# links it dynamically by default, after the static group, so no flag spells it;
+# deps/build_local.jl then checks that every name this library asks of julia's copy is
+# one it exports.
+option(CLANGEX_STATIC_GCC_RUNTIME "Link libgcc and libstdc++ statically (mingw only)" OFF)
 if (MINGW AND CLANGEX_STATIC_GCC_RUNTIME)
-    target_link_options(clangex PRIVATE -static-libgcc -static-libstdc++
-                        "-Wl,-Bstatic,--whole-archive" "-lwinpthread"
-                        "-Wl,--no-whole-archive,-Bdynamic")
+    target_link_options(clangex PRIVATE -static-libgcc -static-libstdc++)
 endif()
 
 target_link_libraries(clangex LINK_PUBLIC LLVM clang-cpp)

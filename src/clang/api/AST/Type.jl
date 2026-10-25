@@ -2258,8 +2258,8 @@ end
 """
     getSize(x::AbstractConstantArrayType) -> LLVMGenericValueRef
 Return the array's element count as a caller-owned `LLVMGenericValueRef`
-(release via LLVM-C's `LLVMDisposeGenericValue`; no Julia `dispose` method
-exists for it), matching `getValue(::AbstractIntegerLiteral)`.
+(wrap it with `LLVM.adopt(LLVM.GenericValue(ref))` and release that with
+`LLVM.dispose`), matching `getValue(::AbstractIntegerLiteral)`.
 """
 function getSize(x::AbstractConstantArrayType)
     @check_ptrs x
